@@ -23,6 +23,8 @@
 #include <stdlib.h>
 #include <sysexits.h>
 
+#include "scanner.h"
+#include "token.h"
 #include "utility.h"
 
 /* temporary run function until all required functions have been completed */

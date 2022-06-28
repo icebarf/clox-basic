@@ -32,6 +32,8 @@ endif
 
 OBJ = \
 	src/clox.o \
+	src/token.o \
+	src/scanner.o \
 	src/utility.o
 
 # Track header file dependency changes
