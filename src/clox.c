@@ -29,6 +29,7 @@
 void run(const char* buffer)
 {
     puts(buffer);
+    free((void*)buffer);
 }
 
 void runfile(const char* filename)
@@ -46,7 +47,6 @@ void run_prompt(void)
 
         add_history(line);
         run(line);
-        free((void*)line);
     }
 }
 
