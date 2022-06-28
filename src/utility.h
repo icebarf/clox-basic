@@ -17,8 +17,8 @@
 // You should have received a copy of the GNU General Public License along with
 // clox-basic. If not, see <https://www.gnu.org/licenses/>.
 
-#ifndef CLOX_1_UTILTIY_H
-#define CLOX_1_UTILTIY_H
+#ifndef CLOX_BASIC_UTILTIY_H
+#define CLOX_BASIC_UTILTIY_H
 
 /* reads a file into a heap-allocated buffer and
  * returns the pointer after reading the file */
