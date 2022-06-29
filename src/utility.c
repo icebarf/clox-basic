@@ -18,10 +18,15 @@
 // clox-basic. If not, see <https://www.gnu.org/licenses/>.
 
 #include <errno.h>
+#include <stdbool.h>
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <sysexits.h>
+
+#include "token.h"
+
+extern bool had_error;
 
 char* readfile(const char* filename)
 {
@@ -88,4 +93,28 @@ char* readfile(const char* filename)
     }
 
     return filedata;
+}
+
+const char* get_substr(const char* str, size_t start, size_t end)
+{
+    char* substr = malloc(end + 1);
+    size_t cnt = 0;
+    while (cnt <= end) {
+        substr[cnt] = str[start + cnt];
+        cnt++;
+    }
+    substr[cnt] = '\0';
+
+    return substr;
+}
+
+void report(int line, const char* where, const char* message)
+{
+    fprintf(stderr, "[line %d ] Error %s : %s\n", line, where, message);
+}
+
+void error(int line, const char* message)
+{
+    report(line, "", message);
+    had_error = true;
 }

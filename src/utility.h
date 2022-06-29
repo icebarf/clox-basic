@@ -20,8 +20,17 @@
 #ifndef CLOX_BASIC_UTILTIY_H
 #define CLOX_BASIC_UTILTIY_H
 
+#include <stddef.h>
+
 /* reads a file into a heap-allocated buffer and
  * returns the pointer after reading the file */
 char* readfile(const char* filename);
+
+/* returns a heap allocated null terminated char array containing contents
+ * from str[start] to str[end]*/
+const char* get_substr(const char* str, size_t start, size_t end);
+
+/* report an error */
+void error(int line, const char* message);
 
 #endif

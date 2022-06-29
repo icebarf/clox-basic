@@ -21,11 +21,15 @@
 #include <readline/history.h>
 #include <readline/readline.h>
 #include <stdlib.h>
+#include <stdbool.h>
 #include <sysexits.h>
 
 #include "scanner.h"
 #include "token.h"
 #include "utility.h"
+
+/* do not execute code that has an error */
+bool had_error = false; /* bad - need to figure out a better way */
 
 /* temporary run function until all required functions have been completed */
 void run(const char* buffer)
@@ -38,6 +42,9 @@ void runfile(const char* filename)
 {
     const char* filebuffer = readfile(filename);
     run(filebuffer);
+
+    if (had_error)
+        exit(EX_DATAERR);
 }
 
 void run_prompt(void)
@@ -49,6 +56,7 @@ void run_prompt(void)
 
         add_history(line);
         run(line);
+        had_error = false;
     }
 }
 

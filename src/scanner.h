@@ -23,9 +23,13 @@
 #include "token.h"
 #include <stddef.h>
 
+#define TOKEN_CNT 120L
+
 typedef struct Scanner {
     const char* source;
     Token* tokens;
+    size_t token_max;
+    size_t tokens_count;
     size_t source_length;
     size_t start;
     size_t current;
