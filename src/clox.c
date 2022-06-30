@@ -17,11 +17,13 @@
 // You should have received a copy of the GNU General Public License along with
 // clox-basic. If not, see <https://www.gnu.org/licenses/>.
 
+#include <stddef.h>
 #include <stdio.h>
 #include <readline/history.h>
 #include <readline/readline.h>
 #include <stdlib.h>
 #include <stdbool.h>
+#include <string.h>
 #include <sysexits.h>
 
 #include "scanner.h"
@@ -32,16 +34,27 @@
 bool had_error = false; /* bad - need to figure out a better way */
 
 /* temporary run function until all required functions have been completed */
-void run(const char* buffer)
+void run(const char* buffer, size_t buf_len)
 {
-    puts(buffer);
+    Scanner scanner = init_scanner(buffer, buf_len);
+
+    scan_tokens(&scanner);
+
+    for (size_t i = 0; i <= scanner.tokens_count; i++) {
+        const char* str = token_to_str(&scanner.tokens[i]);
+        fprintf(stdout, "%s\n", str);
+        free((void*)str);
+    }
+
     free((void*)buffer);
+    deallocate_tokens(scanner.tokens, scanner.tokens_count);
 }
 
 void runfile(const char* filename)
 {
-    const char* filebuffer = readfile(filename);
-    run(filebuffer);
+    size_t filesize = 0;
+    const char* filebuffer = readfile(filename, &filesize);
+    run(filebuffer, filesize);
 
     if (had_error)
         exit(EX_DATAERR);
@@ -50,12 +63,12 @@ void runfile(const char* filename)
 void run_prompt(void)
 {
     for (;;) {
-        const char* line = readline("> ");
+        char* line = readline("> ");
         if (line == NULL)
-            break;
+            return;
 
         add_history(line);
-        run(line);
+        run(line, strlen(line));
         had_error = false;
     }
 }
