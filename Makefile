@@ -10,7 +10,7 @@ endif
 
 CFLAGS += -Wall -Wextra
 
-DEBUG:=0
+DEBUG:=1
 # Release mode and flags
 ifeq ($(DEBUG),1)
 	CFLAGS += -g3 -fsanitize=address,undefined
