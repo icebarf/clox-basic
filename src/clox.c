@@ -33,7 +33,11 @@
 /* do not execute code that has an error */
 bool had_error = false; /* bad - need to figure out a better way */
 
-/* temporary run function until all required functions have been completed */
+/* run the interpreter
+ * Params:
+ * @buffer : a null terminated buffer containing lox source code
+ * @buf_len : size of the buffer to be interpreted
+ */
 void run(const char* buffer, size_t buf_len)
 {
     Scanner scanner = init_scanner(buffer, buf_len);
@@ -50,6 +54,10 @@ void run(const char* buffer, size_t buf_len)
     deallocate_tokens(scanner.tokens, scanner.tokens_count);
 }
 
+/* run the interpreter with a file
+ * Params:
+ * @filename : the name of file to be interpreted
+ */
 void runfile(const char* filename)
 {
     size_t filesize = 0;
@@ -60,6 +68,7 @@ void runfile(const char* filename)
         exit(EX_DATAERR);
 }
 
+/* run the interpreter as a RPEL*/
 void run_prompt(void)
 {
     for (;;) {
