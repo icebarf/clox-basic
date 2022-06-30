@@ -22,6 +22,7 @@
 #include <stdlib.h>
 #include "token.h"
 
+/* global TokenTypeString array for different Token Types*/
 const char* TokenTypeString[] = {
     /* Single Character Tokens */
     [LEFT_PAREN] = "left_paren",
@@ -73,6 +74,13 @@ const char* TokenTypeString[] = {
     [ENDOF] = "endof",
 };
 
+/* initialise a token by calling this function
+ * Params:
+ * @type : the type of token scanned
+ * @lexeme : the lexeme/word scanned
+ * @num : a double precision floating point literal scanned
+ * @line : the line where the lexeme was found
+ */
 Token init_tok(const enum TOKEN_TYPE type,
                const char* lexeme,
                const double num,
@@ -85,6 +93,12 @@ Token init_tok(const enum TOKEN_TYPE type,
     return token;
 }
 
+/* returns a human readabble null-terminated formatted string from Token
+ * Params:
+ * @token : the token which is to be converted
+ * Ret:
+ * @const char* : the formatted string
+ */
 const char* token_to_str(const Token* token)
 {
     const char* fmt = "%15s '%s' %.3lf";
@@ -98,12 +112,26 @@ const char* token_to_str(const Token* token)
     return buf;
 }
 
+/* allocate count amount of tokens
+ * Params:
+ * @count : number of tokens to be allocated initially
+ * Ret:
+ * @void* : a block of memory obtained from malloc
+ */
 void* allocate_tokens(unsigned long count)
 {
     Token* tokens = malloc(sizeof(Token) * count);
     return tokens;
 }
 
+/* extend previously allocated tokens by prev_count + count amount of tokens
+ * Params:
+ * @tokens : the previously allocated Tokens
+ * @prev_count : number of tokens allocated previously
+ * @count : number of tokens to extend by
+ * Ret:
+ * @void* : extended block of memory obtained from realloc
+ */
 void extend_tokens_by(Token* tokens,
                       unsigned long prev_count,
                       unsigned long count)
@@ -111,6 +139,10 @@ void extend_tokens_by(Token* tokens,
     tokens = realloc(tokens, (prev_count + count) * sizeof(Token));
 }
 
+/* deallocate the tokens - free the lexemes and then the tokens block
+ * Params:
+ * @tokens : main block of tokens
+ * @tokencnt : the number of tokens present in 'tokens'*/
 void deallocate_tokens(Token* tokens, size_t tokencnt)
 {
     size_t counter = 0;
