@@ -23,6 +23,24 @@
 #include <stdbool.h>
 #include <stddef.h>
 
+/* define some popular escape sequences */
+/* visit https://github.com/dylanaraps/pure-bash-bible#text-colors for more info
+ */
+#define RESET "\033[m"
+
+#define BOLD "\033[1m"
+#define FAINT "\033[2m"
+#define ITALIC "\033[3m"
+#define ULINE "\033[4m"
+#define BLINK "\033[5m"
+#define HIGHLIGHT "\033[7m"
+
+#define GREEN "\033[38;2;0;255;0m"
+#define GREEN_2 "\033[32m"
+#define RED "\033[38;2;255;0;0m"
+#define RED_2 "\033[31m"
+#define BLUE "\033[34m"
+
 /* reads a file into a heap-allocated buffer and
  * returns the pointer after reading the file */
 char* readfile(const char* filename, size_t* filesize);

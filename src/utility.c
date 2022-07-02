@@ -142,7 +142,8 @@ const char* get_substr(const char* str, size_t start, size_t end)
  */
 static void report(int line, const char* where, const char* message)
 {
-    fprintf(stderr, "[line %d ] Error %s : %s\n", line, where, message);
+    fprintf(stderr, RED_2 "[line %d ] Error %s : %s\n" RESET, line, where,
+            message);
 }
 
 /* print out an error

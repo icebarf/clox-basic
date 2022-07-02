@@ -101,14 +101,24 @@ Token init_tok(const enum TOKEN_TYPE type,
  */
 const char* token_to_str(const Token* token)
 {
-    const char* fmt = "%15s '%s' %.3lf";
-    size_t fmt_len = snprintf(NULL, 0, fmt, TokenTypeString[token->type],
-                              token->lexeme, token->num_literal);
+    char* fmt = "%15s '%s' ";
+    size_t fmt_len =
+        snprintf(NULL, 0, fmt, TokenTypeString[token->type], token->lexeme);
+
+    if (token->type == NUMBER) {
+        fmt = "%15s '%s' %.3lf ";
+        fmt_len = snprintf(NULL, 0, fmt, TokenTypeString[token->type],
+                           token->lexeme, token->num_literal);
+    }
     char* buf = malloc(fmt_len + 1);
 
-    snprintf(buf, fmt_len, fmt, TokenTypeString[token->type], token->lexeme,
-             token->num_literal);
+    if (token->type == NUMBER) {
+        snprintf(buf, fmt_len, fmt, TokenTypeString[token->type], token->lexeme,
+                 token->num_literal);
+        return buf;
+    }
 
+    snprintf(buf, fmt_len, fmt, TokenTypeString[token->type], token->lexeme);
     return buf;
 }
 
