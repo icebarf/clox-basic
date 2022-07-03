@@ -285,8 +285,18 @@ static void scan_unit_token(Scanner* scanner)
                 // A comment in lox goes until the end of line.
                 while (peek(scanner) != '\n' && (!is_at_end(scanner)))
                     advance(scanner);
-            }
-            add_token(scanner, SLASH, scanner->start, scanner->current);
+            } else if (match(scanner, '*')) {
+                /* this is a block comment in lox */
+                /* and look, it can go
+                   across lines */
+                while ((peek(scanner) != '*' || peek_next(scanner) != '/') &&
+                       (!is_at_end(scanner))) {
+                    advance(scanner);
+                }
+                advance(scanner);
+                advance(scanner);
+            } else
+                add_token(scanner, SLASH, scanner->start, scanner->current);
             break;
         case ' ':
         case '\r':
@@ -325,9 +335,8 @@ Token* scan_tokens(Scanner* scanner)
     }
 
     /* make sure we have space for one more token */
-    if (scanner->tokens_count == scanner->token_max) {
+    if (scanner->tokens_count == scanner->token_max)
         extend_tokens_by(scanner->tokens, scanner->tokens_count, 2);
-    }
 
     add_token(scanner, ENDOF, 0, 0);
 

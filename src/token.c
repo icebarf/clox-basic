@@ -106,7 +106,7 @@ const char* token_to_str(const Token* token)
         snprintf(NULL, 0, fmt, TokenTypeString[token->type], token->lexeme);
 
     if (token->type == NUMBER) {
-        fmt = "%15s '%s' %.3lf ";
+        fmt = "%15s '%s' %.6lf ";
         fmt_len = snprintf(NULL, 0, fmt, TokenTypeString[token->type],
                            token->lexeme, token->num_literal);
     }
