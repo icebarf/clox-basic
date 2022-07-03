@@ -6,9 +6,9 @@ It is currently work in progress.
 
 Here are the functionalities built
 
-[x] - Lexer or Scanner or Tokenizer
-[] - Abstract Syntax Tree
-[] - Parser
+- [x] Lexer or Scanner or Tokenizer
+- [] Abstract Syntax Tree
+- [] Parser
 
 ...
 
