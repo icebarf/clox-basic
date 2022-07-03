@@ -1,3 +1,4 @@
 src/*.d
 src/*.o
 clox-basic
+*.lox
