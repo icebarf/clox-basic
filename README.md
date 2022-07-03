@@ -1,6 +1,18 @@
 # Clox-basic
 
-This is the implementation of jlox - the interpreter in Chapter 3 of [Crafting Interpreters](https://craftinginterpreters.com/) Book.
+This is the C language implementation of jlox - the lox interpreter written in Java in Chapter 3 of the book [Crafting Interpreters](https://craftinginterpreters.com/).
 
-It is WIP.
-(for those who cannot see)
+It is currently work in progress.
+
+Here are the functionalities built
+
+[x] - Lexer or Scanner or Tokenizer
+[] - Abstract Syntax Tree
+[] - Parser
+
+...
+
+## Dependencies
+
+- GNU Readline
+- Make
