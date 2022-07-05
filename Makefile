@@ -31,7 +31,9 @@ ifeq ($(STATICBIN),1)
 endif
 
 OBJ = \
+	src/ast_printer.o \
 	src/clox.o \
+	src/parser.o \
 	src/token.o \
 	src/scanner.o \
 	src/utility.o
