@@ -1,7 +1,7 @@
-BasedOnStyle: Chromium
+BasedOnStyle: Mozilla
 Language: Cpp
 IndentWidth: 4
-ColumnLimit: 80
+ColumnLimit: 85
 PointerAlignment: Left
 AllowShortFunctionsOnASingleLine: None
 AllowShortIfStatementsOnASingleLine: Never
