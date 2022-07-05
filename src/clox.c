@@ -26,6 +26,8 @@
 #include <string.h>
 #include <sysexits.h>
 
+#include "ast_printer.h"
+#include "parser.h"
 #include "scanner.h"
 #include "token.h"
 #include "utility.h"
@@ -49,6 +51,33 @@ void run(const char* buffer, size_t buf_len)
         fprintf(stdout, "%s\n", str);
         free((void*)str);
     }
+
+    // Unary Expression
+    Token unary_operator = {
+        .type = MINUS, .lexeme = "-", .col = 0, .line = 0, .num_literal = 0};
+    Expr unary_right = {
+        .type = LITERAL,
+        .hld = {.Literal_e = {.type = NUMBER, .value = {.number = 5}}}};
+
+    Expr exp2 = {.type = UNARY,
+                 .hld = {.Unary_e = {.Operator = &unary_operator,
+                                     .right = &unary_right}}};
+    // A binary experession with grouping
+    Expr left = {
+        .type = LITERAL,
+        .hld = {.Literal_e = {.type = NUMBER, .value = {.number = 90}}}};
+    Expr right = {.type = GROUPING,
+                  .hld = {.Grouping_e = {.expression = &exp2}}};
+    Token operator= init_tok(PLUS, "+", 0, 0);
+
+    Expr exp = {.type = BINARY,
+                .hld = {.Binary_e = {.left = &left,
+                                     .Operator = &operator,
+                                     .right = & right } } };
+
+    fprintf(stdout, "\n( ");
+    print_expr(&exp);
+    fprintf(stdout, " )\n");
 
     free((void*)buffer);
     deallocate_tokens(scanner.tokens, scanner.tokens_count);
