@@ -1,0 +1,8 @@
+// this is a comment
+/* this is a block comment */
+/* this is a block comment
+   across lines */
+/* this looks a bit
+ * nicer, lets say ? */
+var n = 12;
+var y = n * 2;
