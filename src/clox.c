@@ -40,7 +40,8 @@ bool had_error = false; /* bad - need to figure out a better way */
  * @buffer : a null terminated buffer containing lox source code
  * @buf_len : size of the buffer to be interpreted
  */
-void run(const char* buffer, size_t buf_len)
+void
+run(const char* buffer, size_t buf_len)
 {
     Scanner scanner = init_scanner(buffer, buf_len);
 
@@ -53,30 +54,54 @@ void run(const char* buffer, size_t buf_len)
     }
 
     // Unary Expression
-    Token unary_operator = {
-        .type = MINUS, .lexeme = "-", .col = 0, .line = 0, .num_literal = 0};
-    Expr unary_right = {
-        .type = LITERAL,
-        .hld = {.Literal_e = {.type = NUMBER, .value = {.number = 5}}}};
+    Token Operator = init_tok(BANG, "!", 0, 0);
 
-    Expr exp2 = {.type = UNARY,
-                 .hld = {.Unary_e = {.Operator = &unary_operator,
-                                     .right = &unary_right}}};
-    // A binary experession with grouping
-    Expr left = {
-        .type = LITERAL,
-        .hld = {.Literal_e = {.type = NUMBER, .value = {.number = 90}}}};
-    Expr right = {.type = GROUPING,
-                  .hld = {.Grouping_e = {.expression = &exp2}}};
-    Token operator= init_tok(PLUS, "+", 0, 0);
+    bool bull = false;
+    struct Literal_e literal =
+      init_literal_expression(FALSE, &bull, &literal_to_str);
 
-    Expr exp = {.type = BINARY,
-                .hld = {.Binary_e = {.left = &left,
-                                     .Operator = &operator,
-                                     .right = & right } } };
+    Expr right = init_expression(LITERAL, &literal, &print_expr);
+
+    struct Unary_e unary = init_unary_expr(&Operator, &right, &unary_to_str);
+
+    Expr unary_expr = init_expression(UNARY, &unary, &print_expr);
+
+    // A little more complex expression
+
+    double number = 10;
+    struct Literal_e left_lit =
+      init_literal_expression(NUMBER, &number, &literal_to_str);
+
+    struct Literal_e right_lit =
+      init_literal_expression(NUMBER, &number, &literal_to_str);
+
+    Token Op = init_tok(EQUAL_EQUAL, "==", 0, 0);
+
+    Expr left_exp = init_expression(LITERAL, &left_lit, &print_expr);
+
+    Expr right_exp = init_expression(LITERAL, &right_lit, &print_expr);
+
+    struct Binary_e bin =
+      init_binary_expr(&left_exp, &Op, &right_exp, &binary_to_str);
+
+    Expr binary_expr = init_expression(BINARY, &bin, &print_expr);
+
+    // Group
+    struct Grouping_e grp = init_group_expr(&binary_expr, &grouping_to_str);
+    struct Grouping_e grp1 = init_group_expr(&unary_expr, &grouping_to_str);
+
+    Expr grp_expr = init_expression(GROUPING, &grp, &print_expr);
+
+    Expr grp1_expr = init_expression(GROUPING, &grp1, &print_expr);
+
+    // binary expression of groups
+    Token op = init_tok(BANG_EQUAL, "!=", 0, 0);
+    struct Binary_e binary_structure =
+      init_binary_expr(&grp_expr, &op, &grp1_expr, &binary_to_str);
+    Expr binary_expression = init_expression(BINARY, &binary_structure, &print_expr);
 
     fprintf(stdout, "\n( ");
-    print_expr(&exp);
+    binary_expression.accept(&binary_expression);
     fprintf(stdout, " )\n");
 
     free((void*)buffer);
@@ -87,7 +112,8 @@ void run(const char* buffer, size_t buf_len)
  * Params:
  * @filename : the name of file to be interpreted
  */
-void runfile(const char* filename)
+void
+runfile(const char* filename)
 {
     size_t filesize = 0;
     const char* filebuffer = readfile(filename, &filesize);
@@ -98,7 +124,8 @@ void runfile(const char* filename)
 }
 
 /* run the interpreter as a RPEL*/
-void run_prompt(void)
+void
+run_prompt(void)
 {
     for (;;) {
         char* line = readline("> ");
@@ -111,7 +138,8 @@ void run_prompt(void)
     }
 }
 
-int main(int argc, char** argv)
+int
+main(int argc, char** argv)
 {
     if (argc > 2) {
         fprintf(stderr, "Usage: clox [script]\n");
