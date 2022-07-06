@@ -23,6 +23,23 @@
 #include "parser.h"
 #include "token.h"
 
+/* prints a literal expression to stdout */
+void
+literal_to_str(struct Literal_e* literal);
+
+/* prints a unary expression to stdout */
+void
+unary_to_str(struct Unary_e* unary);
+
+/* prints a binary expression to stdout */
+void
+binary_to_str(struct Binary_e* binary);
+
+/* prints a group expression to stdout */
+void
+grouping_to_str(struct Grouping_e* grp);
+
+/* print an expression */
 void
 print_expr(Expr* ex);
 #endif
