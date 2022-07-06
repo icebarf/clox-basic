@@ -26,43 +26,60 @@
 
 typedef struct Expr_t Expr;
 
+struct Binary_e {
+    Expr* left;
+    Token* Operator;
+    Expr* right;
+    // visitor pattern. Make the expression visit any function.
+    void (*accept)(struct Binary_e*);
+};
+
+struct Grouping_e {
+    Expr* expression;
+    void (*accept)(struct Grouping_e*);
+};
+
+struct Unary_e {
+    Token* Operator;
+    Expr* right;
+    void (*accept)(struct Unary_e*);
+};
+
+struct Literal_e {
+    enum TOKEN_TYPE type;
+    void* value;
+    void (*accept)(struct Literal_e*);
+};
+
 struct Expr_t {
     enum EXPR_TYPES { LITERAL, UNARY, BINARY, GROUPING } type;
-    union Holder {
-        struct Binary_e {
-            Expr* left;
-            Token* Operator;
-            Expr* right;
-            void (*accept)(struct Binary_e*);
-        } Binary_e;
-
-        struct Grouping_e {
-            Expr* expression;
-            void (*accept)(struct Grouping_e*);
-        } Grouping_e;
-
-        struct Unary_e {
-            Token* Operator;
-            Expr* right;
-            void (*accept)(struct Unary_e*);
-        } Unary_e;
-
-        struct Literal_e {
-            enum TOKEN_TYPE type;
-            union LITERAL_VALUE {
-                double number;
-                char* string;
-                bool boolean;
-            } value;
-            void (*accept)(struct Literal_e*);
-        } Literal_e;
-
-        /* set this acceptor to sub-expression's acceptor is
-         * don't know where it will be useful, but I will keep
-         * it here. Unless I find it is useless, it will not be removed
-         */
-        void (*accept)(void*);
-    } hld;
+    void* expression_structure;
+    void (*accept)(Expr*);
 };
+
+/* initialises a Binary expression */
+struct Binary_e
+init_binary_expr(Expr* left,
+                 Token* Operator,
+                 Expr* right,
+                 void (*visitor)(struct Binary_e*));
+
+/* initialises a Grouping expression */
+struct Grouping_e
+init_group_expr(Expr* expression, void (*visitor)(struct Grouping_e*));
+
+/* initialises an Unary expression */
+struct Unary_e
+init_unary_expr(Token* Operator, Expr* right, void (*visitor)(struct Unary_e*));
+
+/* initialises a literal expression */
+struct Literal_e
+init_literal_expression(enum TOKEN_TYPE type,
+                        void* literal,
+                        void (*visitor)(struct Literal_e*));
+
+/* initialises an expression */
+Expr
+init_expression(enum EXPR_TYPES type, void* holder, void (*visitor)(Expr*));
 
 #endif
