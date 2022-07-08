@@ -81,15 +81,15 @@ const char* TokenTypeString[] = {
  * @num : a double precision floating point literal scanned
  * @line : the line where the lexeme was found
  */
-Token init_tok(const enum TOKEN_TYPE type,
-               const char* lexeme,
-               const double num,
-               const int line)
+Token
+init_tok(const enum TOKEN_TYPE type,
+         const char* lexeme,
+         const double num,
+         const int line)
 {
-    Token token = {.type = type,
-                   .lexeme = (char*)lexeme,
-                   .num_literal = num,
-                   .line = line};
+    Token token = {
+        .type = type, .lexeme = (char*)lexeme, .num_literal = num, .line = line
+    };
     return token;
 }
 
@@ -99,21 +99,30 @@ Token init_tok(const enum TOKEN_TYPE type,
  * Ret:
  * @const char* : the formatted string
  */
-const char* token_to_str(const Token* token)
+const char*
+token_to_str(const Token* token)
 {
     char* fmt = "%15s '%s' ";
     size_t fmt_len =
-        snprintf(NULL, 0, fmt, TokenTypeString[token->type], token->lexeme);
+      snprintf(NULL, 0, fmt, TokenTypeString[token->type], token->lexeme);
 
     if (token->type == NUMBER) {
         fmt = "%15s '%s' %.6lf ";
-        fmt_len = snprintf(NULL, 0, fmt, TokenTypeString[token->type],
-                           token->lexeme, token->num_literal);
+        fmt_len = snprintf(NULL,
+                           0,
+                           fmt,
+                           TokenTypeString[token->type],
+                           token->lexeme,
+                           token->num_literal);
     }
     char* buf = malloc(fmt_len + 1);
 
     if (token->type == NUMBER) {
-        snprintf(buf, fmt_len, fmt, TokenTypeString[token->type], token->lexeme,
+        snprintf(buf,
+                 fmt_len,
+                 fmt,
+                 TokenTypeString[token->type],
+                 token->lexeme,
                  token->num_literal);
         return buf;
     }
@@ -128,10 +137,10 @@ const char* token_to_str(const Token* token)
  * Ret:
  * @void* : a block of memory obtained from malloc
  */
-void* allocate_tokens(unsigned long count)
+void*
+allocate_tokens(unsigned long count)
 {
-    Token* tokens = malloc(sizeof(Token) * count);
-    return tokens;
+    return malloc(sizeof(Token) * count);
 }
 
 /* extend previously allocated tokens by prev_count + count amount of tokens
@@ -142,9 +151,8 @@ void* allocate_tokens(unsigned long count)
  * Ret:
  * @void* : extended block of memory obtained from realloc
  */
-void extend_tokens_by(Token* tokens,
-                      unsigned long prev_count,
-                      unsigned long count)
+void
+extend_tokens_by(Token* tokens, unsigned long prev_count, unsigned long count)
 {
     tokens = realloc(tokens, (prev_count + count) * sizeof(Token));
 }
@@ -153,7 +161,8 @@ void extend_tokens_by(Token* tokens,
  * Params:
  * @tokens : main block of tokens
  * @tokencnt : the number of tokens present in 'tokens'*/
-void deallocate_tokens(Token* tokens, size_t tokencnt)
+void
+deallocate_tokens(Token* tokens, size_t tokencnt)
 {
     size_t counter = 0;
 

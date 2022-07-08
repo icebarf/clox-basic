@@ -39,13 +39,14 @@ extern const char* TokenTypeString[40];
  * Ret:
  * @char* : pointer to null terminated char sequence - the file read
  */
-char* readfile(const char* filename, size_t* filesize)
+char*
+readfile(const char* filename, size_t* filesize)
 {
     /* open a file stream to filename*/
     FILE* file = fopen(filename, "r");
     if (file == NULL) {
-        fprintf(stderr, "Error: Could not open file with fopen(): %s\n",
-                strerror(errno));
+        fprintf(
+          stderr, "Error: Could not open file with fopen(): %s\n", strerror(errno));
         exit(EX_OSERR);
     }
 
@@ -68,8 +69,7 @@ char* readfile(const char* filename, size_t* filesize)
 
     /* go back to the beginning */
     if (fseek(file, 0L, SEEK_SET) != 0) {
-        fprintf(stderr,
-                "Error: fseek() could not seek back to beginning of file\n");
+        fprintf(stderr, "Error: fseek() could not seek back to beginning of file\n");
         exit(EX_UNAVAILABLE);
     }
 
@@ -100,7 +100,8 @@ char* readfile(const char* filename, size_t* filesize)
     }
 
     if (fclose(file) != 0) {
-        fprintf(stderr, "Error: fclose() could not close file stream: %s\n",
+        fprintf(stderr,
+                "Error: fclose() could not close file stream: %s\n",
                 strerror(errno));
         exit(EX_OSERR);
     }
@@ -117,7 +118,8 @@ char* readfile(const char* filename, size_t* filesize)
  * @const char* : a pointer to a const null-terminated char array
  * i.e the substring
  */
-const char* get_substr(const char* str, size_t start, size_t end)
+const char*
+get_substr(const char* str, size_t start, size_t end)
 {
     /* return null if the size to get is zero */
     if (end - start == 0)
@@ -140,10 +142,10 @@ const char* get_substr(const char* str, size_t start, size_t end)
  * @where : the string specifying where the error occurred
  * @message : the error message
  */
-static void report(int line, const char* where, const char* message)
+static void
+report(int line, const char* where, const char* message)
 {
-    fprintf(stderr, RED_2 "[line %d ] Error %s : %s\n" RESET, line, where,
-            message);
+    fprintf(stderr, RED_2 "[line %d ] Error %s : %s\n" RESET, line, where, message);
 }
 
 /* print out an error
@@ -151,7 +153,8 @@ static void report(int line, const char* where, const char* message)
  * @line : the line where the error occurred
  * @message : the error message
  */
-void error(int line, const char* message)
+void
+error(int line, const char* message)
 {
     report(line, "", message);
     had_error = true;
@@ -164,7 +167,8 @@ void error(int line, const char* message)
  * @s1 : the first string
  * @s2 : the second string
  * @count : number of characters to compare */
-bool strncmp_nl(const char* s1, const char* s2, size_t count)
+bool
+strncmp_nl(const char* s1, const char* s2, size_t count)
 {
     if (s1 == NULL || s2 == NULL)
         return false;
@@ -188,7 +192,8 @@ bool strncmp_nl(const char* s1, const char* s2, size_t count)
  * @enum TOKEN_TYPE: a token type is returned for iff a string match
  * is found with a keyword
  */
-enum TOKEN_TYPE get_keyword(const char* str)
+enum TOKEN_TYPE
+get_keyword(const char* str)
 {
     if (strncmp_nl(str, TokenTypeString[AND], strlen(TokenTypeString[AND])))
         return AND;

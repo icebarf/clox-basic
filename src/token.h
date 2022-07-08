@@ -69,7 +69,9 @@ enum TOKEN_TYPE {
     VAR,
     WHILE,
 
-    ENDOF
+    ENDOF,
+    // invalid token value - meant for internal use
+    INVALID_TOKEN_INT
 };
 
 typedef struct Token {
@@ -81,24 +83,29 @@ typedef struct Token {
 } Token;
 
 /* initialise token with value */
-Token init_tok(const enum TOKEN_TYPE type,
-               const char* lexeme,
-               const double num,
-               const int line);
+Token
+init_tok(const enum TOKEN_TYPE type,
+         const char* lexeme,
+         const double num,
+         const int line);
 
 /* convert token to string representation */
-const char* token_to_str(const Token* token);
+const char*
+token_to_str(const Token* token);
 
 /* will allocate space for 'count' amount of tokens */
-void* allocate_tokens(const unsigned long count);
+void*
+allocate_tokens(const unsigned long count);
 
 /* extend the memory allocated for tokens by    'prev_count + count'
  * Note: 'count' is the amount of new tokens to be added not sum ^ */
-void extend_tokens_by(Token* tokens,
-                      const unsigned long prev_count,
-                      const unsigned long count);
+void
+extend_tokens_by(Token* tokens,
+                 const unsigned long prev_count,
+                 const unsigned long count);
 
 /* free() the allocated memory for the tokens */
-void deallocate_tokens(Token* tokens, size_t tokencnt);
+void
+deallocate_tokens(Token* tokens, size_t tokencnt);
 
 #endif
