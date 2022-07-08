@@ -37,9 +37,11 @@ typedef struct Scanner {
 } Scanner;
 
 /* initialise the scanner */
-Scanner init_scanner(const char* source, const size_t source_length);
+Scanner
+init_scanner(const char* source, const size_t source_length);
 
 /* start scanning the tokens */
-Token* scan_tokens(Scanner* scanner);
+Token*
+scan_tokens(Scanner* scanner);
 
 #endif

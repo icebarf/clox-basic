@@ -33,17 +33,18 @@
  * Ret:
  * @Scanner : returns a newly initialised scanner structure
  */
-Scanner init_scanner(const char* source, const size_t source_length)
+Scanner
+init_scanner(const char* source, const size_t source_length)
 {
-    Scanner scanner = {.source = source,
-                       .token_max = TOKEN_CNT,
-                       .tokens_count = 0,
-                       .source_length = source_length,
-                       .start = 0,
-                       .current = 0,
-                       .line = 1};
+    Scanner scanner = { .source = source,
+                        .token_max = TOKEN_CNT,
+                        .tokens_count = 0,
+                        .source_length = source_length,
+                        .start = 0,
+                        .current = 0,
+                        .line = 1 };
 
-    scanner.tokens = allocate_tokens(TOKEN_CNT);  // allocate TOKEN_CNT space
+    scanner.tokens = allocate_tokens(TOKEN_CNT); // allocate TOKEN_CNT space
 
     return scanner;
 }
@@ -54,7 +55,8 @@ Scanner init_scanner(const char* source, const size_t source_length)
  * Ret:
  * @double : absolute value of d
  */
-static double abs_d(double d)
+static double
+abs_d(double d)
 {
     if (d < 0.0)
         return -d;
@@ -67,15 +69,13 @@ static double abs_d(double d)
  * @start : the location where the token in lox's source starts
  * @end : the location where the token in lox's source ends
  */
-static void add_token(Scanner* scanner,
-                      enum TOKEN_TYPE type,
-                      size_t start,
-                      size_t end)
+static void
+add_token(Scanner* scanner, enum TOKEN_TYPE type, size_t start, size_t end)
 {
     if (type == ENDOF) {
         /* token count is not incremented here because it is the last token */
         scanner->tokens[scanner->tokens_count] =
-            init_tok(type, "", 0, scanner->line);
+          init_tok(type, "", 0, scanner->line);
 
         return;
     }
@@ -86,10 +86,10 @@ static void add_token(Scanner* scanner,
     /* perform special conversion if we have a NUMBER token */
     if (type == NUMBER) {
         scanner->tokens[scanner->tokens_count++] =
-            init_tok(type, text, abs_d(strtod(text, NULL)), scanner->line);
+          init_tok(type, text, abs_d(strtod(text, NULL)), scanner->line);
     } else {
         scanner->tokens[scanner->tokens_count++] =
-            init_tok(type, text, 0, scanner->line);
+          init_tok(type, text, 0, scanner->line);
     }
 }
 
@@ -99,18 +99,20 @@ static void add_token(Scanner* scanner,
  * Ret:
  * @bool : true if current >= source_length
  */
-static bool is_at_end(const Scanner* scanner)
+static bool
+scanner_is_at_end(const Scanner* scanner)
 {
     return scanner->current >= scanner->source_length;
 }
 
-/* advances the scanner
+/* advance_scanners the scanner
  * Params:
  * @scanner : the scanner structure
  * Ret :
  * @char :  the next character in the lox source
  */
-static char advance(Scanner* scanner)
+static char
+advance_scanner(Scanner* scanner)
 {
     return scanner->source[scanner->current++];
 }
@@ -122,9 +124,10 @@ static char advance(Scanner* scanner)
  * @expected : the expected character
  * Ret :
  * @bool : if matched then return true, otherwise false*/
-static bool match(Scanner* scanner, const char expected)
+static bool
+match(Scanner* scanner, const char expected)
 {
-    if (is_at_end(scanner))
+    if (scanner_is_at_end(scanner))
         return false;
     if (scanner->source[scanner->current] != expected)
         return false;
@@ -133,27 +136,29 @@ static bool match(Scanner* scanner, const char expected)
     return true;
 }
 
-/* peeks at the next character in lox source without advancing()
+/* character_peeks at the next character in lox source without advancing()
  * Params :
  * @scanner : the scanner structure
  * Ret :
- * @char : the peeked character
+ * @char : the character_peeked character
  */
-static char peek(const Scanner* scanner)
+static char
+character_peek(const Scanner* scanner)
 {
-    if (is_at_end(scanner))
+    if (scanner_is_at_end(scanner))
         return '\0';
 
     return scanner->source[scanner->current];
 }
 
-/* same as peek() but peeks at the 2nd next character
+/* same as character_peek() but peeks at the 2nd next character
  * Params :
  * @scanner : the scanner structure
  * Ret :
- * @char : the peeked character
+ * @char : the character_peeked character
  */
-static char peek_next(const Scanner* scanner)
+static char
+character_peek_next(const Scanner* scanner)
 {
     if (scanner->current + 1 >= scanner->source_length)
         return '\0';
@@ -165,21 +170,22 @@ static char peek_next(const Scanner* scanner)
  * Params :
  * @scanner : the scanner structure
  */
-static void string(Scanner* scanner)
+static void
+string(Scanner* scanner)
 {
-    while (peek(scanner) != '"' && (!is_at_end(scanner))) {
-        if (peek(scanner) == '\n')
+    while (character_peek(scanner) != '"' && (!scanner_is_at_end(scanner))) {
+        if (character_peek(scanner) == '\n')
             scanner->line++;
-        advance(scanner);
+        advance_scanner(scanner);
     }
 
-    if (is_at_end(scanner)) {
+    if (scanner_is_at_end(scanner)) {
         error(scanner->line, "Unterminated String");
         return;
     }
 
-    /* advance() to the closing '"' */
-    advance(scanner);
+    /* advance_scanner() to the closing '"' */
+    advance_scanner(scanner);
 
     /* add the token with removed surrounding quotes from the string */
     add_token(scanner, STRING, scanner->start + 1, scanner->current - 1);
@@ -189,16 +195,17 @@ static void string(Scanner* scanner)
  * Params :
  * @scanner : the scanner structure
  */
-static void number(Scanner* scanner)
+static void
+number(Scanner* scanner)
 {
-    while (isdigit(peek(scanner)))
-        advance(scanner);
+    while (isdigit(character_peek(scanner)))
+        advance_scanner(scanner);
 
-    if (peek(scanner) == '.' && isdigit(peek_next(scanner))) {
-        advance(scanner);
+    if (character_peek(scanner) == '.' && isdigit(character_peek_next(scanner))) {
+        advance_scanner(scanner);
 
-        while (isdigit(peek(scanner)))
-            advance(scanner);
+        while (isdigit(character_peek(scanner)))
+            advance_scanner(scanner);
     }
 
     add_token(scanner, NUMBER, scanner->start, scanner->current);
@@ -208,13 +215,13 @@ static void number(Scanner* scanner)
  * Params :
  * @scanner : the scanner structure
  */
-static void identifier(Scanner* scanner)
+static void
+identifier(Scanner* scanner)
 {
-    while (isalnum(peek(scanner)))
-        advance(scanner);
+    while (isalnum(character_peek(scanner)))
+        advance_scanner(scanner);
 
-    const char* text =
-        get_substr(scanner->source, scanner->start, scanner->current);
+    const char* text = get_substr(scanner->source, scanner->start, scanner->current);
 
     enum TOKEN_TYPE type = get_keyword(text);
 
@@ -227,9 +234,10 @@ static void identifier(Scanner* scanner)
  * Params :
  * @scanner : the scanner structure
  */
-static void scan_unit_token(Scanner* scanner)
+static void
+scan_unit_token(Scanner* scanner)
 {
-    char c = advance(scanner);
+    char c = advance_scanner(scanner);
     switch (c) {
         case '(':
             add_token(scanner, LEFT_PAREN, scanner->start, scanner->current);
@@ -264,37 +272,39 @@ static void scan_unit_token(Scanner* scanner)
         case '%':
             add_token(scanner, MOD, scanner->start, scanner->current);
             break;
-        case '!':
-            add_token(scanner, match(scanner, '=') ? BANG_EQUAL : BANG,
-                      scanner->start, scanner->current);
-            break;
-        case '=':
-            add_token(scanner, match(scanner, '=') ? EQUAL_EQUAL : EQUAL,
-                      scanner->start, scanner->current);
-            break;
-        case '<':
-            add_token(scanner, match(scanner, '=') ? LESS_EQUAL : LESS,
-                      scanner->start, scanner->current);
-            break;
-        case '>':
-            add_token(scanner, match(scanner, '=') ? GREATER_EQUAL : GREATER,
-                      scanner->start, scanner->current);
-            break;
+        case '!': {
+            enum TOKEN_TYPE type = match(scanner, '=') ? BANG_EQUAL : BANG;
+            add_token(scanner, type, scanner->start, scanner->current);
+        } break;
+        case '=': {
+            enum TOKEN_TYPE type = match(scanner, '=') ? EQUAL_EQUAL : EQUAL;
+            add_token(scanner, type, scanner->start, scanner->current);
+        } break;
+        case '<': {
+            enum TOKEN_TYPE type = match(scanner, '=') ? LESS_EQUAL : LESS;
+            add_token(scanner, type, scanner->start, scanner->current);
+        } break;
+        case '>': {
+            enum TOKEN_TYPE type = match(scanner, '=') ? GREATER_EQUAL : GREATER;
+            add_token(scanner, type, scanner->start, scanner->current);
+        } break;
         case '/':
             if (match(scanner, '/')) {
                 // A comment in lox goes until the end of line.
-                while (peek(scanner) != '\n' && (!is_at_end(scanner)))
-                    advance(scanner);
+                while (character_peek(scanner) != '\n' &&
+                       (!scanner_is_at_end(scanner)))
+                    advance_scanner(scanner);
             } else if (match(scanner, '*')) {
                 /* this is a block comment in lox */
                 /* and look, it can go
                    across lines */
-                while ((peek(scanner) != '*' || peek_next(scanner) != '/') &&
-                       (!is_at_end(scanner))) {
-                    advance(scanner);
+                while ((character_peek(scanner) != '*' ||
+                        character_peek_next(scanner) != '/') &&
+                       (!scanner_is_at_end(scanner))) {
+                    advance_scanner(scanner);
                 }
-                advance(scanner);
-                advance(scanner);
+                advance_scanner(scanner);
+                advance_scanner(scanner);
             } else
                 add_token(scanner, SLASH, scanner->start, scanner->current);
             break;
@@ -325,9 +335,10 @@ static void scan_unit_token(Scanner* scanner)
  * Ret (Optional to be saved) :
  * @Token* : A pointer to all the tokens read
  */
-Token* scan_tokens(Scanner* scanner)
+Token*
+scan_tokens(Scanner* scanner)
 {
-    while (!is_at_end(scanner)) {
+    while (!scanner_is_at_end(scanner)) {
         if (scanner->tokens_count == scanner->token_max)
             extend_tokens_by(scanner->tokens, scanner->tokens_count, TOKEN_CNT);
         scanner->start = scanner->current;
