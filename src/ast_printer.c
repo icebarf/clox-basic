@@ -21,22 +21,26 @@
 
 #include "ast_printer.h"
 #include "parser.h"
+#include "token.h"
 
 void
 literal_to_str(struct Literal_e* literal)
 {
-    switch (literal->type) {
+    switch (literal->value.type) {
         case NUMBER:
-            fprintf(stdout, "%lf ", *(double*)literal->value);
+            fprintf(stdout, "%lf ", literal->value.num_literal);
             break;
         case STRING:
-            fprintf(stdout, "%s ", (const char*)literal->value);
+            fprintf(stdout, "%s ", literal->value.lexeme);
             break;
         case TRUE:
-            fprintf(stdout, "true ");
+            fprintf(stdout, "%s ", literal->value.lexeme);
             break;
         case FALSE:
-            fprintf(stdout, "false ");
+            fprintf(stdout, "%s ", literal->value.lexeme);
+            break;
+        case NIL:
+            fprintf(stdout, "%s ", literal->value.lexeme);
             break;
         default:
             break;
@@ -46,14 +50,14 @@ literal_to_str(struct Literal_e* literal)
 void
 unary_to_str(struct Unary_e* unary)
 {
-    fprintf(stdout, "%c ", unary->Operator->lexeme[0]);
+    fprintf(stdout, "%s ", unary->Operator.lexeme);
     print_expr(unary->right);
 }
 
 void
 binary_to_str(struct Binary_e* binary)
 {
-    fprintf(stdout, "%s ", binary->Operator->lexeme);
+    fprintf(stdout, "%s ", binary->Operator.lexeme);
     print_expr(binary->left);
     print_expr(binary->right);
 }
@@ -61,9 +65,9 @@ binary_to_str(struct Binary_e* binary)
 void
 grouping_to_str(struct Grouping_e* grp)
 {
-    fprintf(stdout, "( ");
+    fprintf(stdout, "(");
     print_expr(grp->expression);
-    fprintf(stdout, " )");
+    fprintf(stdout, ") ");
 }
 
 void

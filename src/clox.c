@@ -44,67 +44,18 @@ void
 run(const char* buffer, size_t buf_len)
 {
     Scanner scanner = init_scanner(buffer, buf_len);
-
     scan_tokens(&scanner);
+    Expr* expression = parse(scanner.tokens);
 
-    for (size_t i = 0; i <= scanner.tokens_count; i++) {
-        const char* str = token_to_str(&scanner.tokens[i]);
-        fprintf(stdout, "%s\n", str);
-        free((void*)str);
-    }
+    if (had_error)
+        return;
 
-    // Unary Expression
-    Token Operator = init_tok(BANG, "!", 0, 0);
-
-    bool bull = false;
-    struct Literal_e literal =
-      init_literal_expression(FALSE, &bull, &literal_to_str);
-
-    Expr right = init_expression(LITERAL, &literal, &print_expr);
-
-    struct Unary_e unary = init_unary_expr(&Operator, &right, &unary_to_str);
-
-    Expr unary_expr = init_expression(UNARY, &unary, &print_expr);
-
-    // A little more complex expression
-
-    double number = 10;
-    struct Literal_e left_lit =
-      init_literal_expression(NUMBER, &number, &literal_to_str);
-
-    struct Literal_e right_lit =
-      init_literal_expression(NUMBER, &number, &literal_to_str);
-
-    Token Op = init_tok(EQUAL_EQUAL, "==", 0, 0);
-
-    Expr left_exp = init_expression(LITERAL, &left_lit, &print_expr);
-
-    Expr right_exp = init_expression(LITERAL, &right_lit, &print_expr);
-
-    struct Binary_e bin =
-      init_binary_expr(&left_exp, &Op, &right_exp, &binary_to_str);
-
-    Expr binary_expr = init_expression(BINARY, &bin, &print_expr);
-
-    // Group
-    struct Grouping_e grp = init_group_expr(&binary_expr, &grouping_to_str);
-    struct Grouping_e grp1 = init_group_expr(&unary_expr, &grouping_to_str);
-
-    Expr grp_expr = init_expression(GROUPING, &grp, &print_expr);
-
-    Expr grp1_expr = init_expression(GROUPING, &grp1, &print_expr);
-
-    // binary expression of groups
-    Token op = init_tok(BANG_EQUAL, "!=", 0, 0);
-    struct Binary_e binary_structure =
-      init_binary_expr(&grp_expr, &op, &grp1_expr, &binary_to_str);
-    Expr binary_expression = init_expression(BINARY, &binary_structure, &print_expr);
-
-    fprintf(stdout, "\n( ");
-    binary_expression.accept(&binary_expression);
-    fprintf(stdout, " )\n");
+    fprintf(stdout, "\n(");
+    print_expr(expression);
+    fprintf(stdout, ")\n");
 
     free((void*)buffer);
+    deallocate_expr(expression);
     deallocate_tokens(scanner.tokens, scanner.tokens_count);
 }
 

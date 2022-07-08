@@ -21,6 +21,8 @@
 #define CLOX_BASIC_PARSER_H
 
 #include <stdbool.h>
+#include <stddef.h>
+#include <stdlib.h>
 
 #include "token.h"
 
@@ -28,7 +30,7 @@ typedef struct Expr_t Expr;
 
 struct Binary_e {
     Expr* left;
-    Token* Operator;
+    Token Operator;
     Expr* right;
     // visitor pattern. Make the expression visit any function.
     void (*accept)(struct Binary_e*);
@@ -40,46 +42,43 @@ struct Grouping_e {
 };
 
 struct Unary_e {
-    Token* Operator;
+    Token Operator;
     Expr* right;
     void (*accept)(struct Unary_e*);
 };
 
 struct Literal_e {
-    enum TOKEN_TYPE type;
-    void* value;
+    Token value;
     void (*accept)(struct Literal_e*);
 };
 
 struct Expr_t {
-    enum EXPR_TYPES { LITERAL, UNARY, BINARY, GROUPING } type;
+    enum EXPR_TYPES { LITERAL, UNARY, BINARY, GROUPING, INVALID_EXPR_INT } type;
     void* expression_structure;
     void (*accept)(Expr*);
 };
 
-/* initialises a Binary expression */
-struct Binary_e
-init_binary_expr(Expr* left,
-                 Token* Operator,
-                 Expr* right,
-                 void (*visitor)(struct Binary_e*));
+typedef struct {
+    Token* tokens;
+    size_t current;
+} Parser;
 
-/* initialises a Grouping expression */
-struct Grouping_e
-init_group_expr(Expr* expression, void (*visitor)(struct Grouping_e*));
+/******* Functions ********/
 
-/* initialises an Unary expression */
-struct Unary_e
-init_unary_expr(Token* Operator, Expr* right, void (*visitor)(struct Unary_e*));
+/* initialise the parser */
+Parser
+init_parser(Token* tokens);
 
-/* initialises a literal expression */
-struct Literal_e
-init_literal_expression(enum TOKEN_TYPE type,
-                        void* literal,
-                        void (*visitor)(struct Literal_e*));
+/* expression allocator */
+void*
+allocate_expr(void);
 
-/* initialises an expression */
-Expr
-init_expression(enum EXPR_TYPES type, void* holder, void (*visitor)(Expr*));
+/* expression de-allocator */
+void
+deallocate_expr(Expr* expr);
+
+/* parse an expression from the given array of tokens */
+Expr*
+parse(Token* tokens);
 
 #endif
