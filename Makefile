@@ -50,8 +50,7 @@ all: $(BIN)
 $(BIN): $(OBJ)
 	$(CC) $(CFLAGS) -o $@ $(OBJ) $(LDFLAGS)
 
-rebuild:
-	make $(BIN)
+rebuild: $(BIN)
 
 clean:
 	rm -f $(BIN) $(DEP) $(OBJ)

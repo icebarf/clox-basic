@@ -1,10 +1,11 @@
-BasedOnStyle: Mozilla
 Language: Cpp
 IndentWidth: 4
 ColumnLimit: 85
 PointerAlignment: Left
+BasedOnStyle: Mozilla
 AllowShortFunctionsOnASingleLine: None
 AllowShortIfStatementsOnASingleLine: Never
+AllowAllParametersOfDeclarationOnNextLine: true
 
 BreakBeforeBraces: Custom
 BraceWrapping:
