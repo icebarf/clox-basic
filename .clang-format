@@ -4,7 +4,7 @@ ColumnLimit: 85
 PointerAlignment: Left
 BasedOnStyle: Mozilla
 AllowShortFunctionsOnASingleLine: None
-AllowShortIfStatementsOnASingleLine: Never
+AllowShortIfStatementsOnASingleLine: Always
 AllowAllParametersOfDeclarationOnNextLine: true
 
 BreakBeforeBraces: Custom
