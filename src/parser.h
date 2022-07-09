@@ -28,12 +28,14 @@
 
 typedef struct Expr_t Expr;
 
+/* atomic structures that make up the expression structure */
 struct Binary_e {
-    Expr* left;
     Token Operator;
+    Expr* left;
     Expr* right;
     // visitor pattern. Make the expression visit any function.
     void (*accept)(struct Binary_e*);
+    bool nests;
 };
 
 struct Grouping_e {
@@ -52,10 +54,18 @@ struct Literal_e {
     void (*accept)(struct Literal_e*);
 };
 
+/* the molecule - expression */
 struct Expr_t {
-    enum EXPR_TYPES { LITERAL, UNARY, BINARY, GROUPING, INVALID_EXPR_INT } type;
     void* expression_structure;
     void (*accept)(Expr*);
+    enum EXPR_TYPES {
+        ALLOC,
+        LITERAL,
+        UNARY,
+        BINARY,
+        GROUPING,
+        INVALID_EXPR_INT
+    } type;
 };
 
 typedef struct {
@@ -79,6 +89,6 @@ deallocate_expr(Expr* expr);
 
 /* parse an expression from the given array of tokens */
 Expr*
-parse(Token* tokens);
+parse(Parser* parser);
 
 #endif

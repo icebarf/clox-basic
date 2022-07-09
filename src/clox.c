@@ -45,15 +45,18 @@ run(const char* buffer, size_t buf_len)
 {
     Scanner scanner = init_scanner(buffer, buf_len);
     scan_tokens(&scanner);
-    Expr* expression = parse(scanner.tokens);
+
+    Parser parser = init_parser(scanner.tokens);
+    Expr* expression = parse(&parser);
 
     if (had_error)
-        return;
+        goto end;
 
     fprintf(stdout, "\n(");
-    print_expr(expression);
+    expression->accept(expression);
     fprintf(stdout, ")\n");
 
+end:
     free((void*)buffer);
     deallocate_expr(expression);
     deallocate_tokens(scanner.tokens, scanner.tokens_count);

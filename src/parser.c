@@ -40,9 +40,11 @@ init_binary_expr(Expr* left,
                  Expr* right,
                  void (*visitor)(struct Binary_e*))
 {
-    return (struct Binary_e){
-        .left = left, .Operator = Operator, .right = right, .accept = visitor
-    };
+    return (struct Binary_e){ .left = left,
+                              .Operator = Operator,
+                              .right = right,
+                              .accept = visitor,
+                              .nests = false };
 }
 
 struct Grouping_e
@@ -76,10 +78,39 @@ init_parser(Token* tokens)
     return (Parser){ .tokens = tokens, .current = 0 };
 }
 
+static inline void
+MEM_LOG(enum EXPR_TYPES cond)
+{
+    (void)cond;
+#ifdef CLOX_LOG_ALLOCATIONS
+    switch (cond) {
+        case ALLOC:
+            puts("Allocating Expression");
+            break;
+        case GROUPING:
+            puts("Deallocating Group");
+            break;
+        case BINARY:
+            puts("Deallocating Binary");
+            break;
+        case UNARY:
+            puts("Deallocating Unary");
+            break;
+        case LITERAL:
+            puts("Deallocating Literal");
+            break;
+        case INVALID_EXPR_INT:
+            puts("Deallocating Literal");
+            break;
+    }
+#endif
+}
+
 /***** Allocator-deallocator *****/
 void*
 allocate_expr(void)
 {
+    MEM_LOG(ALLOC);
     return malloc(sizeof(Expr));
 }
 
@@ -88,12 +119,14 @@ deallocate_expr(Expr* expr)
 {
     switch (expr->type) {
         case GROUPING: {
+            MEM_LOG(GROUPING);
             struct Grouping_e* g = expr->expression_structure;
             deallocate_expr(g->expression);
             free(expr->expression_structure);
             free(expr);
         } break;
         case BINARY: {
+            MEM_LOG(BINARY);
             struct Binary_e* b = expr->expression_structure;
             deallocate_expr(b->left);
             deallocate_expr(b->right);
@@ -101,16 +134,19 @@ deallocate_expr(Expr* expr)
             free(expr);
         } break;
         case UNARY: {
+            MEM_LOG(UNARY);
             struct Unary_e* u = expr->expression_structure;
             deallocate_expr(u->right);
             free(expr->expression_structure);
             free(expr);
         } break;
         case LITERAL: {
+            MEM_LOG(LITERAL);
             free(expr->expression_structure);
             free(expr);
         } break;
         case INVALID_EXPR_INT: {
+            MEM_LOG(INVALID_EXPR_INT);
             free(expr);
         }
         default:
@@ -353,81 +389,93 @@ unary_rule(Parser* parser)
 Expr*
 factor_rule(Parser* parser)
 {
-    Expr* expr = unary_rule(parser);
+    Expr* binary_expr = unary_rule(parser);
+    size_t cnt = 0;
 
     while (match_token(parser, 2, SLASH, STAR)) {
-        Expr* binary_expr = allocate_expr();
         Token Operator = previous_token(parser);
         Expr* right = unary_rule(parser);
 
         struct Binary_e* binary = malloc(sizeof(struct Binary_e));
-        *binary = init_binary_expr(expr, Operator, right, &binary_to_str);
+        *binary = init_binary_expr(binary_expr, Operator, right, &binary_to_str);
+        if (cnt)
+            binary->nests = true;
 
+        binary_expr = allocate_expr();
         *binary_expr = init_expression(BINARY, binary, &print_expr);
-        return binary_expr;
+        cnt++;
     }
 
-    return expr;
+    return binary_expr;
 }
 
 Expr*
 term_rule(Parser* parser)
 {
-    Expr* expr = factor_rule(parser);
+    Expr* binary_expr = factor_rule(parser);
+    size_t cnt = 0;
 
     while (match_token(parser, 2, MINUS, PLUS)) {
-        Expr* binary_expr = allocate_expr();
         Token Operator = previous_token(parser);
         Expr* right = factor_rule(parser);
 
         struct Binary_e* binary = malloc(sizeof(struct Binary_e));
-        *binary = init_binary_expr(expr, Operator, right, &binary_to_str);
+        *binary = init_binary_expr(binary_expr, Operator, right, &binary_to_str);
+        if (cnt)
+            binary->nests = true;
 
+        binary_expr = allocate_expr();
         *binary_expr = init_expression(BINARY, binary, print_expr);
-        return binary_expr;
+        cnt++;
     }
 
-    return expr;
+    return binary_expr;
 }
 
 Expr*
 comparison_rule(Parser* parser)
 {
-    Expr* expr = term_rule(parser);
+    Expr* binary_expr = term_rule(parser);
+    size_t cnt = 0;
 
     while (match_token(parser, 4, GREATER, GREATER_EQUAL, LESS, LESS_EQUAL)) {
-        Expr* binary_expr = allocate_expr();
         Token Operator = previous_token(parser);
         Expr* right = term_rule(parser);
 
         struct Binary_e* binary = malloc(sizeof(struct Binary_e));
-        *binary = init_binary_expr(expr, Operator, right, &binary_to_str);
+        *binary = init_binary_expr(binary_expr, Operator, right, &binary_to_str);
+        if (cnt)
+            binary->nests = true;
 
+        binary_expr = allocate_expr();
         *binary_expr = init_expression(BINARY, binary, &print_expr);
-        return binary_expr;
+        cnt++;
     }
 
-    return expr;
+    return binary_expr;
 }
 
 Expr*
 equality_rule(Parser* parser)
 {
-    Expr* expr = comparison_rule(parser);
+    Expr* binary_expr = comparison_rule(parser);
+    size_t cnt = 0;
 
     while (match_token(parser, 2, BANG_EQUAL, EQUAL_EQUAL)) {
-        Expr* binary_expr = allocate_expr();
         Token Operator = previous_token(parser);
         Expr* right = comparison_rule(parser);
 
         struct Binary_e* binary = malloc(sizeof(struct Binary_e));
-        *binary = init_binary_expr(expr, Operator, right, &binary_to_str);
+        *binary = init_binary_expr(binary_expr, Operator, right, &binary_to_str);
+        if (cnt)
+            binary->nests = true;
 
+        binary_expr = allocate_expr();
         *binary_expr = init_expression(BINARY, binary, &print_expr);
-        return binary_expr;
+        cnt++;
     }
 
-    return expr;
+    return binary_expr;
 }
 
 Expr*
@@ -437,13 +485,10 @@ expression_rule(Parser* parser)
 }
 
 Expr*
-parse(Token* tokens)
+parse(Parser* parser)
 {
-    Parser parser = init_parser(tokens);
-    Expr* exp = expression_rule(&parser);
-    if (exp->type == INVALID_EXPR_INT) {
+    Expr* exp = expression_rule(parser);
+    if (exp->type == INVALID_EXPR_INT)
         had_error = true;
-        return NULL;
-    }
     return exp;
 }
