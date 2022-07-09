@@ -49,16 +49,19 @@ run(const char* buffer, size_t buf_len)
     Parser parser = init_parser(scanner.tokens);
     Expr* expression = parse(&parser);
 
-    if (had_error)
+    if (expression == NULL)
         goto end;
+    if (had_error)
+        goto expr_end;
 
     fprintf(stdout, "\n(");
     expression->accept(expression);
     fprintf(stdout, ")\n");
 
+expr_end:
+    deallocate_expr(expression);
 end:
     free((void*)buffer);
-    deallocate_expr(expression);
     deallocate_tokens(scanner.tokens, scanner.tokens_count);
 }
 

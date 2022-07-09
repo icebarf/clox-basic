@@ -198,7 +198,6 @@ void
 parser_error(Token token, const char* message)
 {
     REPORT_PARSER_ERROR_INTERNAL(token, message);
-    exit(EX_DATAERR);
 }
 
 bool
@@ -211,16 +210,14 @@ parser_is_at_end(Parser* parser)
 Token
 advance_parser(Parser* parser)
 {
-    if (!parser_is_at_end(parser))
-        parser->current++;
+    if (!parser_is_at_end(parser)) parser->current++;
     return previous_token(parser);
 }
 
 bool
 check_token(Parser* parser, enum TOKEN_TYPE type)
 {
-    if (parser_is_at_end(parser))
-        return false;
+    if (parser_is_at_end(parser)) return false;
     Token tok = peek_token(parser);
     return tok.type == type;
 }
@@ -248,8 +245,7 @@ syncronize_parser(Parser* parser)
     advance_parser(parser);
     while (!parser_is_at_end(parser)) {
         Token tok = previous_token(parser);
-        if (tok.type == SEMICOLON)
-            return;
+        if (tok.type == SEMICOLON) return;
 
         tok = peek_token(parser);
 
@@ -274,8 +270,7 @@ syncronize_parser(Parser* parser)
 Token
 consume(Parser* parser, enum TOKEN_TYPE type, const char* message)
 {
-    if (check_token(parser, type))
-        return advance_parser(parser);
+    if (check_token(parser, type)) return advance_parser(parser);
 
     /* if we don't match the expected token just set errno and report parser error */
     errno = EIO;
@@ -374,6 +369,10 @@ unary_rule(Parser* parser)
     if (match_token(parser, 2, BANG, MINUS)) {
         Token Operator = previous_token(parser);
         Expr* right = unary_rule(parser);
+        if (right->type == INVALID_EXPR_INT) {
+            parser_error(Operator, "Invalid operand on RHS");
+            return right;
+        }
 
         struct Unary_e* unary = malloc(sizeof(struct Unary_e));
         *unary = init_unary_expr(Operator, right, &unary_to_str);
@@ -395,11 +394,15 @@ factor_rule(Parser* parser)
     while (match_token(parser, 2, SLASH, STAR)) {
         Token Operator = previous_token(parser);
         Expr* right = unary_rule(parser);
+        if (binary_expr->type == INVALID_EXPR_INT) {
+            parser_error(Operator, "Expected an operand on LHS");
+            deallocate_expr(right);
+            return binary_expr;
+        }
 
         struct Binary_e* binary = malloc(sizeof(struct Binary_e));
         *binary = init_binary_expr(binary_expr, Operator, right, &binary_to_str);
-        if (cnt)
-            binary->nests = true;
+        if (cnt) binary->nests = true;
 
         binary_expr = allocate_expr();
         *binary_expr = init_expression(BINARY, binary, &print_expr);
@@ -418,11 +421,15 @@ term_rule(Parser* parser)
     while (match_token(parser, 2, MINUS, PLUS)) {
         Token Operator = previous_token(parser);
         Expr* right = factor_rule(parser);
+        if (binary_expr->type == INVALID_EXPR_INT) {
+            parser_error(Operator, "Expected an operand on LHS");
+            deallocate_expr(right);
+            return binary_expr;
+        }
 
         struct Binary_e* binary = malloc(sizeof(struct Binary_e));
         *binary = init_binary_expr(binary_expr, Operator, right, &binary_to_str);
-        if (cnt)
-            binary->nests = true;
+        if (cnt) binary->nests = true;
 
         binary_expr = allocate_expr();
         *binary_expr = init_expression(BINARY, binary, print_expr);
@@ -441,11 +448,15 @@ comparison_rule(Parser* parser)
     while (match_token(parser, 4, GREATER, GREATER_EQUAL, LESS, LESS_EQUAL)) {
         Token Operator = previous_token(parser);
         Expr* right = term_rule(parser);
+        if (binary_expr->type == INVALID_EXPR_INT) {
+            parser_error(Operator, "Expected an operand on LHS");
+            deallocate_expr(right);
+            return binary_expr;
+        }
 
         struct Binary_e* binary = malloc(sizeof(struct Binary_e));
         *binary = init_binary_expr(binary_expr, Operator, right, &binary_to_str);
-        if (cnt)
-            binary->nests = true;
+        if (cnt) binary->nests = true;
 
         binary_expr = allocate_expr();
         *binary_expr = init_expression(BINARY, binary, &print_expr);
@@ -464,11 +475,15 @@ equality_rule(Parser* parser)
     while (match_token(parser, 2, BANG_EQUAL, EQUAL_EQUAL)) {
         Token Operator = previous_token(parser);
         Expr* right = comparison_rule(parser);
+        if (binary_expr->type == INVALID_EXPR_INT) {
+            parser_error(Operator, "Expected an operand on LHS");
+            deallocate_expr(right);
+            return binary_expr;
+        }
 
         struct Binary_e* binary = malloc(sizeof(struct Binary_e));
         *binary = init_binary_expr(binary_expr, Operator, right, &binary_to_str);
-        if (cnt)
-            binary->nests = true;
+        if (cnt) binary->nests = true;
 
         binary_expr = allocate_expr();
         *binary_expr = init_expression(BINARY, binary, &print_expr);
@@ -488,7 +503,10 @@ Expr*
 parse(Parser* parser)
 {
     Expr* exp = expression_rule(parser);
-    if (exp->type == INVALID_EXPR_INT)
+    if (exp == NULL) {
         had_error = true;
+        return NULL;
+    }
+    if (exp->type == INVALID_EXPR_INT) had_error = true;
     return exp;
 }
