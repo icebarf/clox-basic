@@ -90,15 +90,21 @@ deallocate_expr(Expr* expr)
         case GROUPING: {
             struct Grouping_e* g = expr->expression_structure;
             deallocate_expr(g->expression);
+            free(expr->expression_structure);
+            free(expr);
         } break;
         case BINARY: {
             struct Binary_e* b = expr->expression_structure;
             deallocate_expr(b->left);
             deallocate_expr(b->right);
+            free(expr->expression_structure);
+            free(expr);
         } break;
         case UNARY: {
             struct Unary_e* u = expr->expression_structure;
             deallocate_expr(u->right);
+            free(expr->expression_structure);
+            free(expr);
         } break;
         case LITERAL: {
             free(expr->expression_structure);
