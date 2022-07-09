@@ -75,9 +75,9 @@ enum TOKEN_TYPE {
 };
 
 typedef struct Token {
-    enum TOKEN_TYPE type;
     char* lexeme;
     double num_literal;
+    enum TOKEN_TYPE type;
     int line;
     int col;
 } Token;
