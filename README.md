@@ -15,8 +15,6 @@ Here are the functionalities built
 - [ ] Name resolving and binding
 - [ ] Classes
 
-...
-
 ## Dependencies
 
 - GNU Readline
