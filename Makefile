@@ -18,6 +18,11 @@ else
 	CFLAGS += -O3
 endif
 
+ALLOC:=0
+ifeq ($(ALLOC),1)
+	CFLAGS += -DCLOX_LOG_ALLOCATIONS
+endif
+
 # Third Party Libraries
 # The '/usr/local/*' is present to 
 # ensure compatibiltiy across distributions
