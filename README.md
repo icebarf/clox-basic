@@ -7,8 +7,13 @@ It is currently work in progress.
 Here are the functionalities built
 
 - [x] Lexer or Scanner or Tokenizer
-- [ ] Abstract Syntax Tree
-- [ ] Parser
+- [x] Abstract Syntax Tree
+- [x] Parser
+- [ ] Evaluation
+- [ ] Control Flow
+- [ ] Functions
+- [ ] Name resolving and binding
+- [ ] Classes
 
 ...
 
