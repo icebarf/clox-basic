@@ -51,22 +51,31 @@ void
 unary_to_str(struct Unary_e* unary)
 {
     fprintf(stdout, "%s ", unary->Operator.lexeme);
-    print_expr(unary->right);
+    unary->right->accept(unary->right);
 }
 
 void
 binary_to_str(struct Binary_e* binary)
 {
+
     fprintf(stdout, "%s ", binary->Operator.lexeme);
-    print_expr(binary->left);
-    print_expr(binary->right);
+
+    if (binary->nests)
+        fprintf(stdout, "(");
+
+    binary->left->accept(binary->left);
+
+    if (binary->nests)
+        fprintf(stdout, ") ");
+
+    binary->right->accept(binary->right);
 }
 
 void
 grouping_to_str(struct Grouping_e* grp)
 {
     fprintf(stdout, "(");
-    print_expr(grp->expression);
+    grp->expression->accept(grp->expression);
     fprintf(stdout, ") ");
 }
 
