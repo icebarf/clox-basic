@@ -66,8 +66,9 @@ unary_to_str(struct Unary_e* unary)
         ast_error();
         return;
     }
-    fprintf(stdout, "%s ", unary->Operator.lexeme);
+    fprintf(stdout, "(%s ", unary->Operator.lexeme);
     unary->right->accept(unary->right);
+    fprintf(stdout, ") ");
 }
 
 void
