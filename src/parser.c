@@ -396,8 +396,9 @@ factor_rule(Parser* parser)
         Expr* right = unary_rule(parser);
         if (binary_expr->type == INVALID_EXPR_INT) {
             parser_error(Operator, "Expected an operand on LHS");
-            deallocate_expr(right);
-            return binary_expr;
+        }
+        if (right->type == INVALID_EXPR_INT) {
+            parser_error(Operator, "Expected an operand on RHS");
         }
 
         struct Binary_e* binary = malloc(sizeof(struct Binary_e));
@@ -423,8 +424,9 @@ term_rule(Parser* parser)
         Expr* right = factor_rule(parser);
         if (binary_expr->type == INVALID_EXPR_INT) {
             parser_error(Operator, "Expected an operand on LHS");
-            deallocate_expr(right);
-            return binary_expr;
+        }
+        if (right->type == INVALID_EXPR_INT) {
+            parser_error(Operator, "Expected an operand on RHS");
         }
 
         struct Binary_e* binary = malloc(sizeof(struct Binary_e));
@@ -450,8 +452,9 @@ comparison_rule(Parser* parser)
         Expr* right = term_rule(parser);
         if (binary_expr->type == INVALID_EXPR_INT) {
             parser_error(Operator, "Expected an operand on LHS");
-            deallocate_expr(right);
-            return binary_expr;
+        }
+        if (right->type == INVALID_EXPR_INT) {
+            parser_error(Operator, "Expected an operand on RHS");
         }
 
         struct Binary_e* binary = malloc(sizeof(struct Binary_e));
@@ -477,8 +480,9 @@ equality_rule(Parser* parser)
         Expr* right = comparison_rule(parser);
         if (binary_expr->type == INVALID_EXPR_INT) {
             parser_error(Operator, "Expected an operand on LHS");
-            deallocate_expr(right);
-            return binary_expr;
+        }
+        if (right->type == INVALID_EXPR_INT) {
+            parser_error(Operator, "Expected an operand on RHS");
         }
 
         struct Binary_e* binary = malloc(sizeof(struct Binary_e));
