@@ -48,7 +48,7 @@ readfile(const char* filename, size_t* filesize);
 
 /* returns a heap allocated null terminated char array containing contents
  * from str[start] to str[end]*/
-const char*
+char*
 get_substr(const char* str, size_t start, size_t end);
 
 /* report an error */

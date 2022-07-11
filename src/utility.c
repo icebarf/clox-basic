@@ -118,12 +118,11 @@ readfile(const char* filename, size_t* filesize)
  * @const char* : a pointer to a const null-terminated char array
  * i.e the substring
  */
-const char*
+char*
 get_substr(const char* str, size_t start, size_t end)
 {
     /* return null if the size to get is zero */
-    if (end - start == 0)
-        return NULL;
+    if (end - start == 0) return NULL;
 
     char* substr = malloc((end - start) + 1);
     size_t cnt = 0;
@@ -170,16 +169,12 @@ error(int line, const char* message)
 bool
 strncmp_nl(const char* s1, const char* s2, size_t count)
 {
-    if (s1 == NULL || s2 == NULL)
-        return false;
-    if (count == 0)
-        return false;
+    if (s1 == NULL || s2 == NULL) return false;
+    if (count == 0) return false;
 
     while (count--) {
-        if (*s1 == '\0' || *s2 == '\0')
-            return false;
-        if (*s1++ != *s2++)
-            return false;
+        if (*s1 == '\0' || *s2 == '\0') return false;
+        if (*s1++ != *s2++) return false;
     }
     return true;
 }
@@ -207,12 +202,10 @@ get_keyword(const char* str)
         return FOR;
     if (strncmp_nl(str, TokenTypeString[FUN], strlen(TokenTypeString[FUN])))
         return FUN;
-    if (strncmp_nl(str, TokenTypeString[IF], strlen(TokenTypeString[IF])))
-        return IF;
+    if (strncmp_nl(str, TokenTypeString[IF], strlen(TokenTypeString[IF]))) return IF;
     if (strncmp_nl(str, TokenTypeString[NIL], strlen(TokenTypeString[NIL])))
         return NIL;
-    if (strncmp_nl(str, TokenTypeString[OR], strlen(TokenTypeString[OR])))
-        return OR;
+    if (strncmp_nl(str, TokenTypeString[OR], strlen(TokenTypeString[OR]))) return OR;
     if (strncmp_nl(str, TokenTypeString[PRINT], strlen(TokenTypeString[PRINT])))
         return PRINT;
     if (strncmp_nl(str, TokenTypeString[RET], strlen(TokenTypeString[RET])))
