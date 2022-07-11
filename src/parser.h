@@ -63,14 +63,7 @@ struct Expr_t {
         struct Literal_e* literal;
     };
     void (*accept)(Expr*);
-    enum EXPR_TYPES {
-        ALLOC,
-        LITERAL,
-        UNARY,
-        BINARY,
-        GROUPING,
-        INVALID_EXPR_INT
-    } type;
+    enum EXPR_TYPES { LITERAL, UNARY, BINARY, GROUPING, INVALID_EXPR_INT } type;
 };
 
 typedef struct {
