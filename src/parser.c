@@ -69,7 +69,23 @@ init_literal_expression(Token token, void (*visitor)(struct Literal_e*))
 Expr
 init_expression(enum EXPR_TYPES type, void* holder, void (*visitor)(Expr*))
 {
-    return (Expr){ .type = type, .expression_structure = holder, .accept = visitor };
+    Expr expr = { .type = type, .accept = visitor };
+    switch (type) {
+        case LITERAL:
+            expr.literal = holder;
+            return expr;
+        case UNARY:
+            expr.unary = holder;
+            return expr;
+        case BINARY:
+            expr.binary = holder;
+            return expr;
+        case GROUPING:
+            expr.group = holder;
+            return expr;
+        default:
+            return expr;
+    }
 }
 
 Parser
@@ -88,31 +104,42 @@ MEM_LOG(enum EXPR_TYPES cond)
             puts("Allocating Expression");
             break;
         case GROUPING:
-            puts("Deallocating Group");
+            puts("Deallocating Group Expression");
             break;
         case BINARY:
-            puts("Deallocating Binary");
+            puts("Deallocating Binary Expression");
             break;
         case UNARY:
-            puts("Deallocating Unary");
+            puts("Deallocating Unary Experssion");
             break;
         case LITERAL:
-            puts("Deallocating Literal");
+            puts("Deallocating Literal Expression");
             break;
         case INVALID_EXPR_INT:
-            puts("Deallocating Literal");
+            puts("Deallocating Invalid Expression");
             break;
     }
 #endif
 }
 
-/***** Allocator-deallocator *****/
-void*
-allocate_expr(void)
-{
-    MEM_LOG(ALLOC);
-    return malloc(sizeof(Expr));
-}
+/* custom allocator - deallocator */
+#define MEM_LOG_ALLOC(T) malloc(sizeof(T))
+
+#ifdef CLOX_LOG_ALLOCATIONS
+#undef MEM_LOG_ALLOC
+#define MEM_LOG_ALLOC(T)                                                            \
+    malloc(sizeof(T));                                                              \
+    puts("Allocating " #T)
+#endif
+
+#define MEM_LOG_DEALLOC(T, x) free(x);
+
+#ifdef CLOX_LOG_ALLOCATIONS
+#undef MEM_LOG_DEALLOC
+#define MEM_LOG_DEALLOC(T, x)                                                       \
+    puts("Deallocating " #T);                                                       \
+    free(x);
+#endif
 
 void
 deallocate_expr(Expr* expr)
@@ -120,29 +147,29 @@ deallocate_expr(Expr* expr)
     switch (expr->type) {
         case GROUPING: {
             MEM_LOG(GROUPING);
-            struct Grouping_e* g = expr->expression_structure;
+            struct Grouping_e* g = expr->group;
             deallocate_expr(g->expression);
-            free(expr->expression_structure);
+            MEM_LOG_DEALLOC(struct Grouping_e, g)
             free(expr);
         } break;
         case BINARY: {
             MEM_LOG(BINARY);
-            struct Binary_e* b = expr->expression_structure;
+            struct Binary_e* b = expr->binary;
             deallocate_expr(b->left);
             deallocate_expr(b->right);
-            free(expr->expression_structure);
+            MEM_LOG_DEALLOC(struct Binary_e, b)
             free(expr);
         } break;
         case UNARY: {
             MEM_LOG(UNARY);
-            struct Unary_e* u = expr->expression_structure;
+            struct Unary_e* u = expr->unary;
             deallocate_expr(u->right);
-            free(expr->expression_structure);
+            MEM_LOG_DEALLOC(struct Unary_e, u)
             free(expr);
         } break;
         case LITERAL: {
             MEM_LOG(LITERAL);
-            free(expr->expression_structure);
+            MEM_LOG_DEALLOC(struct Literal_e, expr->literal);
             free(expr);
         } break;
         case INVALID_EXPR_INT: {
@@ -274,9 +301,7 @@ consume(Parser* parser, enum TOKEN_TYPE type, const char* message)
 
     /* if we don't match the expected token just set errno and report parser error */
     errno = EIO;
-
     parser_error(peek_token(parser), message);
-
     return (Token){ .type = INVALID_TOKEN_INT,
                     .lexeme = NULL,
                     .num_literal = 0,
@@ -292,73 +317,76 @@ primary_rule(Parser* parser)
     Token token = { 0 };
 
     if (match_token(parser, 1, FALSE)) {
-        expr = allocate_expr();
-        literal = malloc(sizeof(struct Literal_e));
-
         token = previous_token(parser);
+
+        literal = MEM_LOG_ALLOC(struct Literal_e);
         *literal = init_literal_expression(token, &literal_to_str);
+
+        expr = MEM_LOG_ALLOC(Expr);
         *expr = init_expression(LITERAL, literal, &print_expr);
         return expr;
     }
 
     if (match_token(parser, 1, TRUE)) {
-        expr = allocate_expr();
-        literal = malloc(sizeof(struct Literal_e));
-
         token = previous_token(parser);
+
+        literal = MEM_LOG_ALLOC(struct Literal_e);
         *literal = init_literal_expression(token, &literal_to_str);
+
+        expr = MEM_LOG_ALLOC(Expr);
         *expr = init_expression(LITERAL, literal, &print_expr);
         return expr;
     }
 
     if (match_token(parser, 1, NIL)) {
-        expr = allocate_expr();
-        literal = malloc(sizeof(struct Literal_e));
-
         token = previous_token(parser);
+
+        literal = MEM_LOG_ALLOC(struct Literal_e);
         *literal = init_literal_expression(token, &literal_to_str);
+
+        expr = MEM_LOG_ALLOC(Expr);
         *expr = init_expression(LITERAL, literal, &print_expr);
         return expr;
     }
 
     if (match_token(parser, 1, STRING)) {
-        expr = allocate_expr();
-        literal = malloc(sizeof(struct Literal_e));
-
         token = previous_token(parser);
+
+        literal = MEM_LOG_ALLOC(struct Literal_e);
         *literal = init_literal_expression(token, &literal_to_str);
+
+        expr = MEM_LOG_ALLOC(Expr);
         *expr = init_expression(LITERAL, literal, &print_expr);
         return expr;
     }
 
     if (match_token(parser, 1, NUMBER)) {
-        expr = allocate_expr();
-        literal = malloc(sizeof(struct Literal_e));
-
         token = previous_token(parser);
+
+        literal = MEM_LOG_ALLOC(struct Literal_e);
         *literal = init_literal_expression(token, &literal_to_str);
+
+        expr = MEM_LOG_ALLOC(Expr);
         *expr = init_expression(LITERAL, literal, &print_expr);
         return expr;
     }
 
     if (match_token(parser, 1, LEFT_PAREN)) {
-        expr = allocate_expr();
-        literal = malloc(sizeof(struct Literal_e));
-
         expr = expression_rule(parser);
+
         consume(parser, RIGHT_PAREN, "Expect a ')' after expression.");
 
-        struct Grouping_e* grp = malloc(sizeof(struct Grouping_e));
+        struct Grouping_e* grp = MEM_LOG_ALLOC(struct Grouping_e);
         *grp = init_group_expr(expr, &grouping_to_str);
 
-        Expr* gexpr = allocate_expr();
+        Expr* gexpr = MEM_LOG_ALLOC(Expr);
         *gexpr = init_expression(GROUPING, grp, &print_expr);
 
         return gexpr;
     }
 
     /* if nothing matches then it is just bad */
-    expr = allocate_expr();
+    expr = MEM_LOG_ALLOC(Expr);
     *expr = init_expression(INVALID_EXPR_INT, NULL, NULL);
     return expr;
 }
@@ -374,10 +402,10 @@ unary_rule(Parser* parser)
             return right;
         }
 
-        struct Unary_e* unary = malloc(sizeof(struct Unary_e));
+        struct Unary_e* unary = MEM_LOG_ALLOC(struct Unary_e);
         *unary = init_unary_expr(Operator, right, &unary_to_str);
 
-        Expr* unary_expr = allocate_expr();
+        Expr* unary_expr = MEM_LOG_ALLOC(Expr);
         *unary_expr = init_expression(UNARY, unary, &print_expr);
         return unary_expr;
     }
@@ -401,11 +429,11 @@ factor_rule(Parser* parser)
             parser_error(Operator, "Expected an operand on RHS");
         }
 
-        struct Binary_e* binary = malloc(sizeof(struct Binary_e));
+        struct Binary_e* binary = MEM_LOG_ALLOC(struct Binary_e);
         *binary = init_binary_expr(binary_expr, Operator, right, &binary_to_str);
         if (cnt) binary->nests = true;
 
-        binary_expr = allocate_expr();
+        binary_expr = MEM_LOG_ALLOC(Expr);
         *binary_expr = init_expression(BINARY, binary, &print_expr);
         cnt++;
     }
@@ -429,11 +457,11 @@ term_rule(Parser* parser)
             parser_error(Operator, "Expected an operand on RHS");
         }
 
-        struct Binary_e* binary = malloc(sizeof(struct Binary_e));
+        struct Binary_e* binary = MEM_LOG_ALLOC(struct Binary_e);
         *binary = init_binary_expr(binary_expr, Operator, right, &binary_to_str);
         if (cnt) binary->nests = true;
 
-        binary_expr = allocate_expr();
+        binary_expr = MEM_LOG_ALLOC(Expr);
         *binary_expr = init_expression(BINARY, binary, print_expr);
         cnt++;
     }
@@ -457,11 +485,11 @@ comparison_rule(Parser* parser)
             parser_error(Operator, "Expected an operand on RHS");
         }
 
-        struct Binary_e* binary = malloc(sizeof(struct Binary_e));
+        struct Binary_e* binary = MEM_LOG_ALLOC(struct Binary_e);
         *binary = init_binary_expr(binary_expr, Operator, right, &binary_to_str);
         if (cnt) binary->nests = true;
 
-        binary_expr = allocate_expr();
+        binary_expr = MEM_LOG_ALLOC(Expr);
         *binary_expr = init_expression(BINARY, binary, &print_expr);
         cnt++;
     }
@@ -485,11 +513,11 @@ equality_rule(Parser* parser)
             parser_error(Operator, "Expected an operand on RHS");
         }
 
-        struct Binary_e* binary = malloc(sizeof(struct Binary_e));
+        struct Binary_e* binary = MEM_LOG_ALLOC(struct Binary_e);
         *binary = init_binary_expr(binary_expr, Operator, right, &binary_to_str);
         if (cnt) binary->nests = true;
 
-        binary_expr = allocate_expr();
+        binary_expr = MEM_LOG_ALLOC(Expr);
         *binary_expr = init_expression(BINARY, binary, &print_expr);
         cnt++;
     }

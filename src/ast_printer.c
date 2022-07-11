@@ -106,38 +106,18 @@ print_expr(Expr* ex)
         return;
     }
     switch (ex->type) {
-        case LITERAL: {
-            struct Literal_e* l = ex->expression_structure;
-            if (l->accept == NULL) {
-                ast_error();
-                break;
-            }
-            l->accept(l);
-        } break;
-        case UNARY: {
-            struct Unary_e* u = ex->expression_structure;
-            if (u->accept == NULL) {
-                ast_error();
-                break;
-            }
-            u->accept(u);
-        } break;
-        case BINARY: {
-            struct Binary_e* b = ex->expression_structure;
-            if (b->accept == NULL) {
-                ast_error();
-                break;
-            }
-            b->accept(b);
-        } break;
-        case GROUPING: {
-            struct Grouping_e* g = ex->expression_structure;
-            if (g->accept == NULL) {
-                ast_error();
-                break;
-            }
-            g->accept(g);
-        } break;
+        case LITERAL:
+            ex->literal->accept(ex->literal);
+            break;
+        case UNARY:
+            ex->unary->accept(ex->unary);
+            break;
+        case BINARY:
+            ex->binary->accept(ex->binary);
+            break;
+        case GROUPING:
+            ex->group->accept(ex->group);
+            break;
         default:
             break;
     }

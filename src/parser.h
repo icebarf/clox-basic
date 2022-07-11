@@ -56,7 +56,12 @@ struct Literal_e {
 
 /* the molecule - expression */
 struct Expr_t {
-    void* expression_structure;
+    union {
+        struct Binary_e* binary;
+        struct Grouping_e* group;
+        struct Unary_e* unary;
+        struct Literal_e* literal;
+    };
     void (*accept)(Expr*);
     enum EXPR_TYPES {
         ALLOC,
