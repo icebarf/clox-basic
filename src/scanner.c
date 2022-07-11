@@ -58,8 +58,7 @@ init_scanner(const char* source, const size_t source_length)
 static double
 abs_d(double d)
 {
-    if (d < 0.0)
-        return -d;
+    if (d < 0.0) return -d;
     return d;
 }
 
@@ -81,12 +80,13 @@ add_token(Scanner* scanner, enum TOKEN_TYPE type, size_t start, size_t end)
     }
 
     /* get the token as a string from the lox source */
-    const char* text = get_substr(scanner->source, start, end);
+    char* text = get_substr(scanner->source, start, end);
 
     /* perform special conversion if we have a NUMBER token */
     if (type == NUMBER) {
         scanner->tokens[scanner->tokens_count++] =
-          init_tok(type, text, abs_d(strtod(text, NULL)), scanner->line);
+          init_tok(type, NULL, abs_d(strtod(text, NULL)), scanner->line);
+        free((void*)text);
     } else {
         scanner->tokens[scanner->tokens_count++] =
           init_tok(type, text, 0, scanner->line);
@@ -127,10 +127,8 @@ advance_scanner(Scanner* scanner)
 static bool
 match(Scanner* scanner, const char expected)
 {
-    if (scanner_is_at_end(scanner))
-        return false;
-    if (scanner->source[scanner->current] != expected)
-        return false;
+    if (scanner_is_at_end(scanner)) return false;
+    if (scanner->source[scanner->current] != expected) return false;
 
     scanner->current++;
     return true;
@@ -145,8 +143,7 @@ match(Scanner* scanner, const char expected)
 static char
 character_peek(const Scanner* scanner)
 {
-    if (scanner_is_at_end(scanner))
-        return '\0';
+    if (scanner_is_at_end(scanner)) return '\0';
 
     return scanner->source[scanner->current];
 }
@@ -160,8 +157,7 @@ character_peek(const Scanner* scanner)
 static char
 character_peek_next(const Scanner* scanner)
 {
-    if (scanner->current + 1 >= scanner->source_length)
-        return '\0';
+    if (scanner->current + 1 >= scanner->source_length) return '\0';
 
     return scanner->source[scanner->current + 1];
 }
@@ -174,8 +170,7 @@ static void
 string(Scanner* scanner)
 {
     while (character_peek(scanner) != '"' && (!scanner_is_at_end(scanner))) {
-        if (character_peek(scanner) == '\n')
-            scanner->line++;
+        if (character_peek(scanner) == '\n') scanner->line++;
         advance_scanner(scanner);
     }
 
@@ -319,8 +314,7 @@ scan_unit_token(Scanner* scanner)
             string(scanner);
             break;
         default:
-            if (isdigit(c))
-                number(scanner);
+            if (isdigit(c)) number(scanner);
             else if (isalpha(c))
                 identifier(scanner);
             else

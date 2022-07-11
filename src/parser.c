@@ -302,11 +302,7 @@ consume(Parser* parser, enum TOKEN_TYPE type, const char* message)
     /* if we don't match the expected token just set errno and report parser error */
     errno = EIO;
     parser_error(peek_token(parser), message);
-    return (Token){ .type = INVALID_TOKEN_INT,
-                    .lexeme = NULL,
-                    .num_literal = 0,
-                    .line = 0,
-                    .col = 0 };
+    return (Token){ .type = INVALID_TOKEN_INT, .lexeme = NULL, .line = 0, .col = 0 };
 }
 
 Expr*
@@ -374,7 +370,7 @@ primary_rule(Parser* parser)
     if (match_token(parser, 1, LEFT_PAREN)) {
         expr = expression_rule(parser);
 
-        consume(parser, RIGHT_PAREN, "Expect a ')' after expression.");
+        consume(parser, RIGHT_PAREN, "Expected a ')' after expression.");
 
         struct Grouping_e* grp = MEM_LOG_ALLOC(struct Grouping_e);
         *grp = init_group_expr(expr, &grouping_to_str);

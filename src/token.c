@@ -89,10 +89,13 @@ init_tok(const enum TOKEN_TYPE type,
 {
     Token token = {
         .type = type,
-        .lexeme = (char*)lexeme,
-        .num_literal = num,
         .line = line,
     };
+    if (type == NUMBER) {
+        token.num_literal = num;
+        return token;
+    }
+    token.lexeme = (char*)lexeme;
     return token;
 }
 
@@ -110,23 +113,15 @@ token_to_str(const Token* token)
       snprintf(NULL, 0, fmt, TokenTypeString[token->type], token->lexeme);
 
     if (token->type == NUMBER) {
-        fmt = "%15s '%s' %.6lf ";
-        fmt_len = snprintf(NULL,
-                           0,
-                           fmt,
-                           TokenTypeString[token->type],
-                           token->lexeme,
-                           token->num_literal);
+        fmt = "%15s %lf ";
+        fmt_len =
+          snprintf(NULL, 0, fmt, TokenTypeString[token->type], token->num_literal);
     }
     char* buf = malloc(fmt_len + 1);
 
     if (token->type == NUMBER) {
-        snprintf(buf,
-                 fmt_len,
-                 fmt,
-                 TokenTypeString[token->type],
-                 token->lexeme,
-                 token->num_literal);
+        snprintf(
+          buf, fmt_len, fmt, TokenTypeString[token->type], token->num_literal);
         return buf;
     }
 
@@ -171,6 +166,10 @@ deallocate_tokens(Token* tokens, size_t tokencnt)
 
     /* last EndOfFile Token does not need free()-ing*/
     while (counter < tokencnt) {
+        if (tokens[counter].type == NUMBER) {
+            counter++;
+            continue;
+        }
         free(tokens[counter].lexeme);
         counter++;
     }
