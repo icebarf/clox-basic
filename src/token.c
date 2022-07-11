@@ -88,7 +88,10 @@ init_tok(const enum TOKEN_TYPE type,
          const int line)
 {
     Token token = {
-        .type = type, .lexeme = (char*)lexeme, .num_literal = num, .line = line
+        .type = type,
+        .lexeme = (char*)lexeme,
+        .num_literal = num,
+        .line = line,
     };
     return token;
 }
