@@ -41,6 +41,8 @@
 #define RED_2 "\033[31m"
 #define BLUE "\033[34m"
 
+#define UNUSED(X) (void)X
+
 /* reads a file into a heap-allocated buffer and
  * returns the pointer after reading the file */
 char*

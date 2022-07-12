@@ -1,17 +1,7 @@
 #include "evaluator.h"
 #include "parser.h"
 #include "token.h"
-
-/* object and a token are the same except for line and column fields.
- * I could have typedef*/
-typedef struct {
-    union {
-        char* string;
-        double number;
-        bool boolean;
-    };
-    enum TOKEN_TYPE type;
-} Object;
+#include "utility.h"
 
 Object
 get_object_from_literal(Expr* expr)
@@ -33,4 +23,11 @@ get_object_from_literal(Expr* expr)
         default:
             return (Object){ .type = INVALID_TOKEN_INT };
     }
+}
+
+Object
+evaluate(Expr* expr)
+{
+    UNUSED(expr);
+    return (Object){ .string = NULL, .type = NIL };
 }

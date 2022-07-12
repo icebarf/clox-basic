@@ -38,6 +38,7 @@ endif
 OBJ = \
 	src/ast_printer.o \
 	src/clox.o \
+	src/evaluator.o \
 	src/parser.o \
 	src/token.o \
 	src/scanner.o \

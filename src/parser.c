@@ -27,6 +27,7 @@
 #include <sysexits.h>
 
 #include "ast_printer.h"
+#include "evaluator.h"
 #include "parser.h"
 #include "token.h"
 #include "utility.h"
@@ -67,9 +68,12 @@ init_literal_expression(Token token, void (*visitor)(struct Literal_e*))
 }
 
 Expr
-init_expression(enum EXPR_TYPES type, void* holder, void (*visitor)(Expr*))
+init_expression(enum EXPR_TYPES type,
+                void* holder,
+                void (*visitor)(Expr*),
+                Object (*evaluator)(Expr*))
 {
-    Expr expr = { .type = type, .accept = visitor };
+    Expr expr = { .type = type, .accept = visitor, .evaluate = evaluator };
     switch (type) {
         case LITERAL:
             expr.literal = holder;
@@ -319,7 +323,7 @@ primary_rule(Parser* parser)
         *literal = init_literal_expression(token, &literal_to_str);
 
         expr = MEM_LOG_ALLOC(Expr);
-        *expr = init_expression(LITERAL, literal, &print_expr);
+        *expr = init_expression(LITERAL, literal, &print_expr, &evaluate);
         return expr;
     }
 
@@ -330,7 +334,7 @@ primary_rule(Parser* parser)
         *literal = init_literal_expression(token, &literal_to_str);
 
         expr = MEM_LOG_ALLOC(Expr);
-        *expr = init_expression(LITERAL, literal, &print_expr);
+        *expr = init_expression(LITERAL, literal, &print_expr, &evaluate);
         return expr;
     }
 
@@ -341,7 +345,7 @@ primary_rule(Parser* parser)
         *literal = init_literal_expression(token, &literal_to_str);
 
         expr = MEM_LOG_ALLOC(Expr);
-        *expr = init_expression(LITERAL, literal, &print_expr);
+        *expr = init_expression(LITERAL, literal, &print_expr, &evaluate);
         return expr;
     }
 
@@ -352,7 +356,7 @@ primary_rule(Parser* parser)
         *literal = init_literal_expression(token, &literal_to_str);
 
         expr = MEM_LOG_ALLOC(Expr);
-        *expr = init_expression(LITERAL, literal, &print_expr);
+        *expr = init_expression(LITERAL, literal, &print_expr, &evaluate);
         return expr;
     }
 
@@ -363,7 +367,7 @@ primary_rule(Parser* parser)
         *literal = init_literal_expression(token, &literal_to_str);
 
         expr = MEM_LOG_ALLOC(Expr);
-        *expr = init_expression(LITERAL, literal, &print_expr);
+        *expr = init_expression(LITERAL, literal, &print_expr, &evaluate);
         return expr;
     }
 
@@ -376,14 +380,14 @@ primary_rule(Parser* parser)
         *grp = init_group_expr(expr, &grouping_to_str);
 
         Expr* gexpr = MEM_LOG_ALLOC(Expr);
-        *gexpr = init_expression(GROUPING, grp, &print_expr);
+        *gexpr = init_expression(GROUPING, grp, &print_expr, &evaluate);
 
         return gexpr;
     }
 
     /* if nothing matches then it is just bad */
     expr = MEM_LOG_ALLOC(Expr);
-    *expr = init_expression(INVALID_EXPR_INT, NULL, NULL);
+    *expr = init_expression(INVALID_EXPR_INT, NULL, NULL, &evaluate);
     return expr;
 }
 
@@ -402,7 +406,7 @@ unary_rule(Parser* parser)
         *unary = init_unary_expr(Operator, right, &unary_to_str);
 
         Expr* unary_expr = MEM_LOG_ALLOC(Expr);
-        *unary_expr = init_expression(UNARY, unary, &print_expr);
+        *unary_expr = init_expression(UNARY, unary, &print_expr, &evaluate);
         return unary_expr;
     }
 
@@ -430,7 +434,7 @@ factor_rule(Parser* parser)
         if (cnt) binary->nests = true;
 
         binary_expr = MEM_LOG_ALLOC(Expr);
-        *binary_expr = init_expression(BINARY, binary, &print_expr);
+        *binary_expr = init_expression(BINARY, binary, &print_expr, &evaluate);
         cnt++;
     }
 
@@ -458,7 +462,7 @@ term_rule(Parser* parser)
         if (cnt) binary->nests = true;
 
         binary_expr = MEM_LOG_ALLOC(Expr);
-        *binary_expr = init_expression(BINARY, binary, print_expr);
+        *binary_expr = init_expression(BINARY, binary, &print_expr, &evaluate);
         cnt++;
     }
 
@@ -486,7 +490,7 @@ comparison_rule(Parser* parser)
         if (cnt) binary->nests = true;
 
         binary_expr = MEM_LOG_ALLOC(Expr);
-        *binary_expr = init_expression(BINARY, binary, &print_expr);
+        *binary_expr = init_expression(BINARY, binary, &print_expr, &evaluate);
         cnt++;
     }
 
@@ -514,7 +518,7 @@ equality_rule(Parser* parser)
         if (cnt) binary->nests = true;
 
         binary_expr = MEM_LOG_ALLOC(Expr);
-        *binary_expr = init_expression(BINARY, binary, &print_expr);
+        *binary_expr = init_expression(BINARY, binary, &print_expr, &evaluate);
         cnt++;
     }
 

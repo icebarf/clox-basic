@@ -27,6 +27,14 @@
 #include "token.h"
 
 typedef struct Expr_t Expr;
+typedef struct {
+    union {
+        char* string;
+        double number;
+        bool boolean;
+    };
+    enum TOKEN_TYPE type;
+} Object;
 
 /* atomic structures that make up the expression structure */
 struct Binary_e {
@@ -63,6 +71,7 @@ struct Expr_t {
         struct Literal_e* literal;
     };
     void (*accept)(Expr*);
+    Object (*evaluate)(Expr*);
     enum EXPR_TYPES { LITERAL, UNARY, BINARY, GROUPING, INVALID_EXPR_INT } type;
 };
 
