@@ -119,7 +119,7 @@ readfile(const char* filename, size_t* filesize)
  * i.e the substring
  */
 char*
-get_substr(const char* str, size_t start, size_t end)
+get_substr(const char* str, size_t start, size_t end, size_t* substr_len)
 {
     /* return null if the size to get is zero */
     if (end - start == 0) return NULL;
@@ -131,6 +131,7 @@ get_substr(const char* str, size_t start, size_t end)
         cnt++;
     }
     substr[cnt] = '\0';
+    if (substr_len != NULL) *substr_len = end - start;
 
     return substr;
 }
