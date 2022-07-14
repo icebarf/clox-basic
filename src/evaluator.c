@@ -170,7 +170,8 @@ evaluate_unary(Expr* expr)
     switch (expr->unary->Operator.type) {
         case MINUS:
             if (!check_number_operands(NUMBER, 1, right)) {
-                runtime_error(expr->unary->Operator, "Operand must be a number");
+                runtime_error(expr->unary->Operator,
+                              "Runtime: Operand must be a number");
                 return (Object){ .type = INVALID_TOKEN_INT };
             }
             return (Object){ .number = -right.number,
@@ -201,7 +202,8 @@ evaluate_binary(Expr* expr)
     switch (expr->binary->Operator.type) {
         case MINUS:
             if (!check_number_operands(NUMBER, 2, left, right)) {
-                runtime_error(expr->binary->Operator, "Operands must be numbers");
+                runtime_error(expr->binary->Operator,
+                              "Runtime: Operands must be numbers");
                 return (Object){ .type = INVALID_TOKEN_INT };
             }
             return (Object){ .number = left.number - right.number, .type = NUMBER };
@@ -221,29 +223,31 @@ evaluate_binary(Expr* expr)
             }
 
             runtime_error(expr->binary->Operator,
-                          "Operands must be two numbers or two strings.");
+                          "Runtime: Operands must be two numbers or two strings.");
             return (Object){ .type = INVALID_TOKEN_INT };
 
         case SLASH:
             if (!check_number_operands(NUMBER, 2, left, right)) {
-                runtime_error(expr->binary->Operator, "Operands must be numbers");
+                runtime_error(expr->binary->Operator,
+                              "Runtime: Operands must be numbers");
                 return (Object){ .type = INVALID_TOKEN_INT };
             }
             if (is_floating_almost_equal(right.number, 0.0f)) {
                 runtime_error(expr->binary->Operator,
-                              "Division by zero is not allowed.");
+                              "Runtime: Division by zero is not allowed.");
                 return (Object){ .type = INVALID_TOKEN_INT };
             }
             return (Object){ .number = left.number / right.number, .type = NUMBER };
 
         case MOD:
             if (!check_number_operands(NUMBER, 2, left, right)) {
-                runtime_error(expr->binary->Operator, "Operands must be numbers");
+                runtime_error(expr->binary->Operator,
+                              "Runtime: Operands must be numbers");
                 return (Object){ .type = INVALID_TOKEN_INT };
             }
             if (is_floating_almost_equal(right.number, 0.0f)) {
                 runtime_error(expr->binary->Operator,
-                              "Division by zero is not allowed.");
+                              "Runtime: Division by zero is not allowed.");
                 return (Object){ .type = INVALID_TOKEN_INT };
             }
             return (Object){ .number = fmod(left.number, right.number),
@@ -251,14 +255,16 @@ evaluate_binary(Expr* expr)
 
         case STAR:
             if (!check_number_operands(NUMBER, 2, left, right)) {
-                runtime_error(expr->binary->Operator, "Operands must be numbers");
+                runtime_error(expr->binary->Operator,
+                              "Runtime: Operands must be numbers");
                 return (Object){ .type = INVALID_TOKEN_INT };
             }
             return (Object){ .number = left.number * right.number, .type = NUMBER };
 
         case GREATER: {
             if (!check_number_operands(NUMBER, 2, left, right)) {
-                runtime_error(expr->binary->Operator, "Operands must be numbers");
+                runtime_error(expr->binary->Operator,
+                              "Runtime: Operands must be numbers");
                 return (Object){ .type = INVALID_TOKEN_INT };
             }
             bool what = isgreater(left.number, right.number);
@@ -266,7 +272,8 @@ evaluate_binary(Expr* expr)
         }
         case GREATER_EQUAL: {
             if (!check_number_operands(NUMBER, 2, left, right)) {
-                runtime_error(expr->binary->Operator, "Operands must be numbers");
+                runtime_error(expr->binary->Operator,
+                              "Runtime: Operands must be numbers");
                 return (Object){ .type = INVALID_TOKEN_INT };
             }
             bool what = isgreaterequal(left.number, right.number);
@@ -274,7 +281,8 @@ evaluate_binary(Expr* expr)
         }
         case LESS: {
             if (!check_number_operands(NUMBER, 2, left, right)) {
-                runtime_error(expr->binary->Operator, "Operands must be numbers");
+                runtime_error(expr->binary->Operator,
+                              "Runtime: Operands must be numbers");
                 return (Object){ .type = INVALID_TOKEN_INT };
             }
             bool what = isless(left.number, right.number);
@@ -282,7 +290,8 @@ evaluate_binary(Expr* expr)
         }
         case LESS_EQUAL: {
             if (!check_number_operands(NUMBER, 2, left, right)) {
-                runtime_error(expr->binary->Operator, "Operands must be numbers");
+                runtime_error(expr->binary->Operator,
+                              "Runtime: Operands must be numbers");
                 return (Object){ .type = INVALID_TOKEN_INT };
             }
             bool what = islessequal(left.number, right.number);
