@@ -81,8 +81,7 @@ add_token(Scanner* scanner, enum TOKEN_TYPE type, size_t start, size_t end)
     }
 
     /* get the token as a string from the lox source */
-    size_t len = 0;
-    char* text = get_substr(scanner->source, start, end, &len);
+    char* text = get_substr(scanner->source, start, end, NULL);
 
     /* perform special conversion if we have a NUMBER token */
     if (type == NUMBER) {
@@ -91,7 +90,7 @@ add_token(Scanner* scanner, enum TOKEN_TYPE type, size_t start, size_t end)
         free((void*)text);
     } else {
         scanner->tokens[scanner->tokens_count++] =
-          init_tok(type, text, len, 0, scanner->line);
+          init_tok(type, text, end - start, 0, scanner->line);
     }
 }
 
