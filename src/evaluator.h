@@ -6,4 +6,7 @@
 Object
 evaluate(Expr* expr);
 
+void
+interpret(Expr* expr);
+
 #endif

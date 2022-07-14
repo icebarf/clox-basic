@@ -27,13 +27,15 @@
 #include <sysexits.h>
 
 #include "ast_printer.h"
+#include "evaluator.h"
 #include "parser.h"
 #include "scanner.h"
 #include "token.h"
 #include "utility.h"
 
 /* do not execute code that has an error */
-bool had_error = false; /* bad - need to figure out a better way */
+bool had_error = false;
+bool had_runtime_error = false;
 
 /* run the interpreter
  * Params:
@@ -49,14 +51,14 @@ run(const char* buffer, size_t buf_len)
     Parser parser = init_parser(scanner.tokens);
     Expr* expression = parse(&parser);
 
-    if (expression == NULL)
-        goto end;
-    if (had_error)
-        goto expr_end;
+    if (expression == NULL) goto end;
+    if (had_error) goto expr_end;
 
-    fprintf(stdout, "\n(");
-    expression->accept(expression);
-    fprintf(stdout, ")\n");
+    // fprintf(stdout, "\n(");
+    // expression->accept(expression);
+    // fprintf(stdout, ")\n");
+
+    interpret(expression);
 
 expr_end:
     deallocate_expr(expression);
@@ -76,8 +78,8 @@ runfile(const char* filename)
     const char* filebuffer = readfile(filename, &filesize);
     run(filebuffer, filesize);
 
-    if (had_error)
-        exit(EX_DATAERR);
+    if (had_error) exit(EX_DATAERR);
+    if (had_runtime_error) exit(EX_SOFTWARE);
 }
 
 /* run the interpreter as a RPEL*/
@@ -86,8 +88,7 @@ run_prompt(void)
 {
     for (;;) {
         char* line = readline("> ");
-        if (line == NULL)
-            return;
+        if (line == NULL) return;
 
         add_history(line);
         run(line, strlen(line));
