@@ -33,6 +33,7 @@ typedef struct {
         double number;
         bool boolean;
     };
+    size_t string_len;
     enum TOKEN_TYPE type;
 } Object;
 

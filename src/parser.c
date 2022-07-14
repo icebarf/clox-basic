@@ -104,9 +104,6 @@ MEM_LOG(enum EXPR_TYPES cond)
     (void)cond;
 #ifdef CLOX_LOG_ALLOCATIONS
     switch (cond) {
-        case ALLOC:
-            puts("Allocating Expression");
-            break;
         case GROUPING:
             puts("Deallocating Group Expression");
             break;
