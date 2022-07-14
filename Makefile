@@ -26,7 +26,7 @@ endif
 # Third Party Libraries
 # The '/usr/local/*' is present to 
 # ensure compatibiltiy across distributions
-LDFLAGS += -L /usr/local/lib -lreadline
+LDFLAGS += -L /usr/local/lib -lreadline -lm
 CFLAGS += -I /usr/local/include
 
 # Static or dynamic linking
