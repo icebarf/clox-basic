@@ -9,7 +9,7 @@ Here are the functionalities built
 - [x] Lexer or Scanner or Tokenizer
 - [x] Abstract Syntax Tree
 - [x] Parser
-- [ ] Evaluation
+- [x] Evaluation
 - [ ] Control Flow
 - [ ] Functions
 - [ ] Name resolving and binding
