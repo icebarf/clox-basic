@@ -84,13 +84,11 @@ const char* TokenTypeString[] = {
 Token
 init_tok(const enum TOKEN_TYPE type,
          const char* lexeme,
-         const double num,
+         size_t lexeme_len,
+         double num,
          const int line)
 {
-    Token token = {
-        .type = type,
-        .line = line,
-    };
+    Token token = { .type = type, .line = line, .lexeme_len = lexeme_len };
     if (type == NUMBER) {
         token.num_literal = num;
         return token;

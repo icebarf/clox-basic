@@ -79,6 +79,7 @@ typedef struct Token {
         char* lexeme;
         double num_literal;
     };
+    size_t lexeme_len;
     enum TOKEN_TYPE type;
     int line;
     int col;
@@ -88,7 +89,8 @@ typedef struct Token {
 Token
 init_tok(const enum TOKEN_TYPE type,
          const char* lexeme,
-         const double num,
+         size_t lexeme_len,
+         double num,
          const int line);
 
 /* convert token to string representation */

@@ -19,6 +19,7 @@
 
 #include <ctype.h>
 #include <stdbool.h>
+#include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -74,22 +75,23 @@ add_token(Scanner* scanner, enum TOKEN_TYPE type, size_t start, size_t end)
     if (type == ENDOF) {
         /* token count is not incremented here because it is the last token */
         scanner->tokens[scanner->tokens_count] =
-          init_tok(type, "", 0, scanner->line);
+          init_tok(type, "", 0, 0, scanner->line);
 
         return;
     }
 
     /* get the token as a string from the lox source */
-    char* text = get_substr(scanner->source, start, end);
+    size_t len = 0;
+    char* text = get_substr(scanner->source, start, end, &len);
 
     /* perform special conversion if we have a NUMBER token */
     if (type == NUMBER) {
         scanner->tokens[scanner->tokens_count++] =
-          init_tok(type, NULL, abs_d(strtod(text, NULL)), scanner->line);
+          init_tok(type, NULL, 0, abs_d(strtod(text, NULL)), scanner->line);
         free((void*)text);
     } else {
         scanner->tokens[scanner->tokens_count++] =
-          init_tok(type, text, 0, scanner->line);
+          init_tok(type, text, len, 0, scanner->line);
     }
 }
 
@@ -216,7 +218,8 @@ identifier(Scanner* scanner)
     while (isalnum(character_peek(scanner)))
         advance_scanner(scanner);
 
-    const char* text = get_substr(scanner->source, scanner->start, scanner->current);
+    const char* text =
+      get_substr(scanner->source, scanner->start, scanner->current, NULL);
 
     enum TOKEN_TYPE type = get_keyword(text);
 
