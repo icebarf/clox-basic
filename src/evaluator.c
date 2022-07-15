@@ -12,10 +12,11 @@
 #include "utility.h"
 
 extern bool had_runtime_error;
+enum LIMITS { DOUBLE_MAX_DIG = 19 };
 
 /**** utility functions for the evaluator ****/
 
-Object
+static Object
 get_object_from_literal(Expr* expr)
 {
     if (expr->type != LITERAL) return (Object){ .type = INVALID_TOKEN_INT };
@@ -23,6 +24,7 @@ get_object_from_literal(Expr* expr)
     switch (expr->literal->value.type) {
         case NUMBER:
             return (Object){ .number = expr->literal->value.num_literal,
+                             .string_len = expr->literal->value.lexeme_len,
                              .type = NUMBER };
         case STRING:
             return (Object){ .string = expr->literal->value.lexeme,
@@ -43,13 +45,13 @@ get_object_from_literal(Expr* expr)
     }
 }
 
-bool
+static bool
 is_bool(Object object)
 {
     return object.type == TRUE || object.type == FALSE;
 }
 
-bool
+static bool
 is_truthy(Object object)
 {
     if (object.type == INVALID_TOKEN_INT) return false;
@@ -62,7 +64,7 @@ is_truthy(Object object)
     return true;
 }
 
-enum TOKEN_TYPE
+static enum TOKEN_TYPE
 boolean_type(bool b)
 {
     if (b == true) return TRUE;
@@ -71,7 +73,7 @@ boolean_type(bool b)
     __builtin_unreachable();
 }
 
-bool
+static bool
 is_floating_almost_equal(double a, double b)
 {
     double diff = 0;
@@ -85,19 +87,19 @@ is_floating_almost_equal(double a, double b)
     return false;
 }
 
-bool
+static bool
 True(Object a)
 {
     return a.type == TRUE;
 }
 
-bool
+static bool
 False(Object a)
 {
     return a.type == FALSE;
 }
 
-bool
+static bool
 is_equal(Object a, Object b)
 {
     if (a.type == INVALID_TOKEN_INT && b.type == INVALID_TOKEN_INT) return true;
@@ -134,7 +136,7 @@ is_equal(Object a, Object b)
     return is_floating_almost_equal(a.number, b.number);
 }
 
-bool
+static bool
 check_number_operands(enum TOKEN_TYPE chktype, size_t objcnt, ...)
 {
     Object obj;
@@ -148,21 +150,21 @@ check_number_operands(enum TOKEN_TYPE chktype, size_t objcnt, ...)
     return true;
 }
 
-void
+static void
 runtime_error(Token Operator, const char* message)
 {
-    error(Operator.line, message);
+    error(Operator.line, Operator.col, message);
     had_runtime_error = true;
 }
 
 /****** Actual Evaluator code ******/
-Object
+static Object
 evaluate_literal(Expr* expr)
 {
     return get_object_from_literal(expr);
 }
 
-Object
+static Object
 evaluate_unary(Expr* expr)
 {
     Object right = evaluate(expr->unary->right);
@@ -174,11 +176,11 @@ evaluate_unary(Expr* expr)
                               "Runtime: Operand must be a number");
                 return (Object){ .type = INVALID_TOKEN_INT };
             }
-            return (Object){ .number = -right.number,
-                             .type = expr->unary->Operator.type };
+            return (Object){ .number = -right.number, .type = NUMBER };
 
         case BANG: {
-            /* only invalid object and false and NIL are Falsy, rest are Truthy */
+            /* only invalid object and false and NIL are Falsy, rest are Truthy
+             */
             bool what = !is_truthy(right);
             return (Object){ .boolean = what, .type = boolean_type(what) };
         }
@@ -187,13 +189,13 @@ evaluate_unary(Expr* expr)
     }
 }
 
-Object
+static Object
 evaluate_group(Expr* expr)
 {
     return evaluate(expr->group->expression);
 }
 
-Object
+static Object
 evaluate_binary(Expr* expr)
 {
     Object left = evaluate(expr->binary->left);
@@ -329,15 +331,14 @@ evaluate(Expr* expr)
             __builtin_unreachable();
     }
 }
-
-char*
+static char*
 stringify(Object object)
 {
     if (object.type == NIL) return "nil";
 
     if (object.type == NUMBER) {
-        char* str = calloc(1, sizeof(double) + 1);
-        sprintf(str, "%lf", object.number);
+        char* str = calloc(DOUBLE_MAX_DIG + 1, sizeof(char));
+        snprintf(str, DOUBLE_MAX_DIG, "%lf", object.number);
         return str;
     }
 
@@ -357,7 +358,7 @@ stringify(Object object)
     return NULL;
 }
 
-void
+static void
 deallocate_object(Object o)
 {
     if (o.type == STRING) free(o.string);
