@@ -34,6 +34,7 @@ typedef struct Scanner {
     size_t start;
     size_t current;
     size_t line;
+    size_t line_start_column;
 } Scanner;
 
 /* initialise the scanner */

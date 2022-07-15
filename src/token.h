@@ -75,23 +75,22 @@ enum TOKEN_TYPE {
 };
 
 typedef struct Token {
-    union {
-        char* lexeme;
-        double num_literal;
-    };
+    char* lexeme;
+    double num_literal;
     size_t lexeme_len;
+    size_t line;
+    size_t col;
     enum TOKEN_TYPE type;
-    int line;
-    int col;
 } Token;
 
 /* initialise token with value */
 Token
-init_tok(const enum TOKEN_TYPE type,
-         const char* lexeme,
+init_tok(enum TOKEN_TYPE type,
+         char* lexeme,
          size_t lexeme_len,
          double num,
-         const int line);
+         size_t line,
+         size_t col);
 
 /* convert token to string representation */
 const char*

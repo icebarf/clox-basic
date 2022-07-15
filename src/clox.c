@@ -54,6 +54,12 @@ run(const char* buffer, size_t buf_len)
     if (expression == NULL) goto end;
     if (had_error) goto expr_end;
 
+    // for (size_t i = 0; i <= scanner.tokens_count; i++) {
+    //     const char* str = token_to_str(&scanner.tokens[i]);
+    //     fprintf(stdout, "%s\n", str);
+    //     free((void*)str);
+    // }
+
     // fprintf(stdout, "\n(");
     // expression->accept(expression);
     // fprintf(stdout, ")\n");

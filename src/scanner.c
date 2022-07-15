@@ -63,6 +63,12 @@ abs_d(double d)
     return d;
 }
 
+static size_t
+find_col(Scanner* scanner)
+{
+    return scanner->start - scanner->line_start_column;
+}
+
 /* add a new token to scanner's token array
  * @scanner : the scanner structure
  * @type : the type of token to be added
@@ -75,7 +81,7 @@ add_token(Scanner* scanner, enum TOKEN_TYPE type, size_t start, size_t end)
     if (type == ENDOF) {
         /* token count is not incremented here because it is the last token */
         scanner->tokens[scanner->tokens_count] =
-          init_tok(type, "", 0, 0, scanner->line);
+          init_tok(type, "", 0, 0, scanner->line, find_col(scanner) + 1);
 
         return;
     }
@@ -83,15 +89,21 @@ add_token(Scanner* scanner, enum TOKEN_TYPE type, size_t start, size_t end)
     /* get the token as a string from the lox source */
     char* text = get_substr(scanner->source, start, end, NULL);
 
-    /* perform special conversion if we have a NUMBER token */
+    /* perform conversion if we have a NUMBER token */
     if (type == NUMBER) {
         scanner->tokens[scanner->tokens_count++] =
-          init_tok(type, NULL, 0, abs_d(strtod(text, NULL)), scanner->line);
-        free((void*)text);
-    } else {
-        scanner->tokens[scanner->tokens_count++] =
-          init_tok(type, text, end - start, 0, scanner->line);
+          init_tok(type,
+                   text,
+                   end - start,
+                   abs_d(strtod(text, NULL)),
+                   scanner->line,
+                   find_col(scanner));
+
+        return;
     }
+
+    scanner->tokens[scanner->tokens_count++] =
+      init_tok(type, text, end - start, 0, scanner->line, find_col(scanner));
 }
 
 /* returns if the scanner has reached the end of lox source
@@ -298,6 +310,12 @@ scan_unit_token(Scanner* scanner)
                 while ((character_peek(scanner) != '*' ||
                         character_peek_next(scanner) != '/') &&
                        (!scanner_is_at_end(scanner))) {
+
+                    /* handle the newlines inside of the block comments */
+                    if (character_peek(scanner) == '\n') {
+                        scanner->line++;
+                        scanner->line_start_column = scanner->current;
+                    }
                     advance_scanner(scanner);
                 }
                 advance_scanner(scanner);
@@ -311,6 +329,7 @@ scan_unit_token(Scanner* scanner)
             break;
         case '\n':
             scanner->line++;
+            scanner->line_start_column = scanner->current;
             break;
         case '"':
             string(scanner);
