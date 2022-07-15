@@ -66,7 +66,7 @@ abs_d(double d)
 static size_t
 find_col(Scanner* scanner)
 {
-    return scanner->start - scanner->line_start_column;
+    return scanner->start - scanner->line_start_column + 1;
 }
 
 /* add a new token to scanner's token array
