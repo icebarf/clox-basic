@@ -24,6 +24,7 @@ get_object_from_literal(Expr* expr)
     switch (expr->literal->value.type) {
         case NUMBER:
             return (Object){ .number = expr->literal->value.num_literal,
+                             .string = expr->literal->value.lexeme,
                              .string_len = expr->literal->value.lexeme_len,
                              .type = NUMBER };
         case STRING:
@@ -215,17 +216,21 @@ evaluate_binary(Expr* expr)
                 return (Object){ .number = left.number + right.number,
                                  .type = NUMBER };
             }
-            if ((left.type == STRING) && (right.type == STRING)) {
+
+            if (((left.type == NUMBER) && (right.type == STRING)) ||
+                ((left.type == STRING) && (right.type == NUMBER)) ||
+                ((left.type == STRING) && (right.type == STRING))) {
+
                 char* bigstr =
                   calloc(left.string_len + right.string_len + 1, sizeof(char));
 
-                memccpy(bigstr, left.string, left.string_len, sizeof(char));
-                strcat(bigstr, right.string);
+                memccpy(bigstr, left.string, '\0', left.string_len);
+                strncat(bigstr, right.string, right.string_len);
                 return (Object){ .string = bigstr, .type = STRING };
             }
 
             runtime_error(expr->binary->Operator,
-                          "Runtime: Operands must be two numbers or two strings.");
+                          "Runtime: Operands must either be a number or a string.");
             return (Object){ .type = INVALID_TOKEN_INT };
 
         case SLASH:

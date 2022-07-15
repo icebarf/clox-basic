@@ -29,10 +29,10 @@
 typedef struct Expr_t Expr;
 typedef struct {
     union {
-        char* string;
         double number;
         bool boolean;
     };
+    char* string;
     size_t string_len;
     enum TOKEN_TYPE type;
 } Object;
