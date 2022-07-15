@@ -101,7 +101,7 @@ init_parser(Token* tokens)
 static inline void
 MEM_LOG(enum EXPR_TYPES cond)
 {
-    (void)cond;
+    UNUSED(cond);
 #ifdef CLOX_LOG_ALLOCATIONS
     switch (cond) {
         case GROUPING:
@@ -147,30 +147,30 @@ deallocate_expr(Expr* expr)
 {
     switch (expr->type) {
         case GROUPING: {
-            MEM_LOG(GROUPING);
             struct Grouping_e* g = expr->group;
             deallocate_expr(g->expression);
             MEM_LOG_DEALLOC(struct Grouping_e, g)
+            MEM_LOG(GROUPING);
             free(expr);
         } break;
         case BINARY: {
-            MEM_LOG(BINARY);
             struct Binary_e* b = expr->binary;
             deallocate_expr(b->left);
             deallocate_expr(b->right);
             MEM_LOG_DEALLOC(struct Binary_e, b)
+            MEM_LOG(BINARY);
             free(expr);
         } break;
         case UNARY: {
-            MEM_LOG(UNARY);
             struct Unary_e* u = expr->unary;
             deallocate_expr(u->right);
             MEM_LOG_DEALLOC(struct Unary_e, u)
+            MEM_LOG(UNARY);
             free(expr);
         } break;
         case LITERAL: {
-            MEM_LOG(LITERAL);
             MEM_LOG_DEALLOC(struct Literal_e, expr->literal);
+            MEM_LOG(LITERAL);
             free(expr);
         } break;
         case INVALID_EXPR_INT: {
@@ -416,7 +416,7 @@ factor_rule(Parser* parser)
     Expr* binary_expr = unary_rule(parser);
     size_t cnt = 0;
 
-    while (match_token(parser, 2, SLASH, STAR)) {
+    while (match_token(parser, 2, SLASH, MOD, STAR)) {
         Token Operator = previous_token(parser);
         Expr* right = unary_rule(parser);
         if (binary_expr->type == INVALID_EXPR_INT) {
