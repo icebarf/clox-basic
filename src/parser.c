@@ -209,7 +209,7 @@ REPORT_PARSER_ERROR_INTERNAL(Token token, const char* message)
         char* buffer = malloc(len + 1);
         snprintf(buffer, len + 1, fmt, message);
 
-        error(token.line, buffer);
+        error(token.col, token.line, buffer);
         free(buffer);
     } else {
         const char* fmt = "at '%s' %s";
@@ -217,7 +217,7 @@ REPORT_PARSER_ERROR_INTERNAL(Token token, const char* message)
         char* buffer = malloc(len + 1);
         snprintf(buffer, len + 1, fmt, token.lexeme, message);
 
-        error(token.line, buffer);
+        error(token.col, token.line, buffer);
         free(buffer);
     }
 }
@@ -416,7 +416,7 @@ factor_rule(Parser* parser)
     Expr* binary_expr = unary_rule(parser);
     size_t cnt = 0;
 
-    while (match_token(parser, 2, SLASH, MOD, STAR)) {
+    while (match_token(parser, 3, SLASH, MOD, STAR)) {
         Token Operator = previous_token(parser);
         Expr* right = unary_rule(parser);
         if (binary_expr->type == INVALID_EXPR_INT) {

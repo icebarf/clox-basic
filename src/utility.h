@@ -55,7 +55,7 @@ get_substr(const char* str, size_t start, size_t end, size_t* substr_len);
 
 /* report an error */
 void
-error(int line, const char* message);
+error(size_t line, size_t col, const char* message);
 
 /* non-lexicographic string compare
  * compares upto 'count' characters or until a zero byte is hit */

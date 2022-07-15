@@ -143,9 +143,10 @@ get_substr(const char* str, size_t start, size_t end, size_t* substr_len)
  * @message : the error message
  */
 static void
-report(int line, const char* where, const char* message)
+report(size_t line, size_t col, const char* where, const char* message)
 {
-    fprintf(stderr, RED_2 "[line %d ] Error %s : %s\n" RESET, line, where, message);
+    fprintf(
+      stderr, RED_2 "[At %ld:%ld ] Error %s: %s\n" RESET, line, col, where, message);
 }
 
 /* print out an error
@@ -154,9 +155,9 @@ report(int line, const char* where, const char* message)
  * @message : the error message
  */
 void
-error(int line, const char* message)
+error(size_t line, size_t col, const char* message)
 {
-    report(line, "", message);
+    report(line, col, "", message);
     had_error = true;
 }
 

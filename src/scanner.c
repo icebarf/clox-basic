@@ -188,7 +188,10 @@ string(Scanner* scanner)
     }
 
     if (scanner_is_at_end(scanner)) {
-        error(scanner->line, "Unterminated String");
+        error(scanner->tokens[scanner->tokens_count - 1].col +
+                scanner->tokens[scanner->tokens_count - 1].lexeme_len + 2,
+              scanner->line,
+              "Unterminated String");
         return;
     }
 
@@ -339,7 +342,10 @@ scan_unit_token(Scanner* scanner)
             else if (isalpha(c))
                 identifier(scanner);
             else
-                error(scanner->line, "Unexpected character.");
+                error(scanner->tokens[scanner->tokens_count - 1].col +
+                        scanner->tokens[scanner->tokens_count - 1].lexeme_len + 2,
+                      scanner->line,
+                      "Unexpected character.");
             break;
     }
 }
