@@ -209,7 +209,7 @@ REPORT_PARSER_ERROR_INTERNAL(Token token, const char* message)
         char* buffer = malloc(len + 1);
         snprintf(buffer, len + 1, fmt, message);
 
-        error(token.col, token.line, buffer);
+        error(token.line, token.col, buffer);
         free(buffer);
     } else {
         const char* fmt = "at '%s' %s";
@@ -217,7 +217,7 @@ REPORT_PARSER_ERROR_INTERNAL(Token token, const char* message)
         char* buffer = malloc(len + 1);
         snprintf(buffer, len + 1, fmt, token.lexeme, message);
 
-        error(token.col, token.line, buffer);
+        error(token.line, token.col, buffer);
         free(buffer);
     }
 }
