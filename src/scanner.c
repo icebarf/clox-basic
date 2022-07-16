@@ -138,7 +138,7 @@ advance_scanner(Scanner* scanner)
  * Ret :
  * @bool : if matched then return true, otherwise false*/
 static bool
-match(Scanner* scanner, const char expected)
+match_character(Scanner* scanner, const char expected)
 {
     if (scanner_is_at_end(scanner)) return false;
     if (scanner->source[scanner->current] != expected) return false;
@@ -285,28 +285,30 @@ scan_unit_token(Scanner* scanner)
             add_token(scanner, MOD, scanner->start, scanner->current);
             break;
         case '!': {
-            enum TOKEN_TYPE type = match(scanner, '=') ? BANG_EQUAL : BANG;
+            enum TOKEN_TYPE type = match_character(scanner, '=') ? BANG_EQUAL : BANG;
             add_token(scanner, type, scanner->start, scanner->current);
         } break;
         case '=': {
-            enum TOKEN_TYPE type = match(scanner, '=') ? EQUAL_EQUAL : EQUAL;
+            enum TOKEN_TYPE type =
+              match_character(scanner, '=') ? EQUAL_EQUAL : EQUAL;
             add_token(scanner, type, scanner->start, scanner->current);
         } break;
         case '<': {
-            enum TOKEN_TYPE type = match(scanner, '=') ? LESS_EQUAL : LESS;
+            enum TOKEN_TYPE type = match_character(scanner, '=') ? LESS_EQUAL : LESS;
             add_token(scanner, type, scanner->start, scanner->current);
         } break;
         case '>': {
-            enum TOKEN_TYPE type = match(scanner, '=') ? GREATER_EQUAL : GREATER;
+            enum TOKEN_TYPE type =
+              match_character(scanner, '=') ? GREATER_EQUAL : GREATER;
             add_token(scanner, type, scanner->start, scanner->current);
         } break;
         case '/':
-            if (match(scanner, '/')) {
+            if (match_character(scanner, '/')) {
                 // A comment in lox goes until the end of line.
                 while (character_peek(scanner) != '\n' &&
                        (!scanner_is_at_end(scanner)))
                     advance_scanner(scanner);
-            } else if (match(scanner, '*')) {
+            } else if (match_character(scanner, '*')) {
                 /* this is a block comment in lox */
                 /* and look, it can go
                    across lines */
