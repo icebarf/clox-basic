@@ -10,6 +10,7 @@ Here are the functionalities built
 - [x] Abstract Syntax Tree
 - [x] Parser
 - [x] Evaluation
+- [ ] Statements
 - [ ] Control Flow
 - [ ] Functions
 - [ ] Name resolving and binding
