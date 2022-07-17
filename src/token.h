@@ -98,7 +98,7 @@ token_to_str(const Token* token);
 
 /* will allocate space for 'count' amount of tokens */
 void*
-allocate_tokens(const unsigned long count);
+allocate_tokens(size_t count);
 
 /* extend the memory allocated for tokens by    'prev_count + count'
  * Note: 'count' is the amount of new tokens to be added not sum ^ */

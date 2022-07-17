@@ -77,6 +77,22 @@ struct Expr_t {
 };
 
 typedef struct {
+    Expr* expression;
+    Token semicolon;
+} Expr_statement;
+
+typedef struct {
+    Expr* expression;
+    Token print;
+    Token semicolon;
+} Print_statement;
+
+typedef union {
+    Expr_statement* exStmt;
+    Print_statement* prtStmt;
+} Statement;
+
+typedef struct {
     Token* tokens;
     size_t current;
 } Parser;

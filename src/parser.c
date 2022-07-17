@@ -539,3 +539,14 @@ parse(Parser* parser)
     if (exp->type == INVALID_EXPR_INT) had_error = true;
     return exp;
 }
+
+void*
+allocate_statements(size_t count)
+{
+    return malloc(count * sizeof(Statement));
+}
+
+Statement*
+parse_stmt(Parser* parser)
+{
+}

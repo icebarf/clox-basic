@@ -155,7 +155,7 @@ token_to_str(const Token* token)
  * @void* : a block of memory obtained from malloc
  */
 void*
-allocate_tokens(unsigned long count)
+allocate_tokens(size_t count)
 {
     return malloc(sizeof(Token) * count);
 }
