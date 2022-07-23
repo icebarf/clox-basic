@@ -49,9 +49,8 @@ run(const char* buffer, size_t buf_len)
     scan_tokens(&scanner);
 
     Parser parser = init_parser(scanner.tokens);
-    Expr* expression = parse(&parser);
+    Statement* stmts = parse(&parser);
 
-    if (expression == NULL) goto end;
     if (had_error) goto expr_end;
 
     // for (size_t i = 0; i <= scanner.tokens_count; i++) {
@@ -64,11 +63,12 @@ run(const char* buffer, size_t buf_len)
     // expression->accept(expression);
     // fprintf(stdout, ")\n");
 
-    interpret(expression);
+    interpret(parser.statements);
 
 expr_end:
-    deallocate_expr(expression);
-end:
+    for (size_t i = 0; i < stmts[0].count; i++) {
+        free(stmts[i].exStmt.expression);
+    }
     free((void*)buffer);
     deallocate_tokens(scanner.tokens, scanner.tokens_count);
 }

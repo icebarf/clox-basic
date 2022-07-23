@@ -95,7 +95,7 @@ init_expression(enum EXPR_TYPES type,
 Parser
 init_parser(Token* tokens)
 {
-    return (Parser){ .tokens = tokens, .current = 0 };
+    return (Parser){ .tokens = tokens };
 }
 
 static inline void
@@ -191,13 +191,13 @@ expression_rule(Parser* parser);
 Token
 peek_token(Parser* parser)
 {
-    return parser->tokens[parser->current];
+    return parser->tokens[parser->current_token_idx];
 }
 
 Token
 previous_token(Parser* parser)
 {
-    return parser->tokens[parser->current - 1];
+    return parser->tokens[parser->current_token_idx - 1];
 }
 
 static void
@@ -238,7 +238,7 @@ parser_is_at_end(Parser* parser)
 Token
 advance_parser(Parser* parser)
 {
-    if (!parser_is_at_end(parser)) parser->current++;
+    if (!parser_is_at_end(parser)) parser->current_token_idx++;
     return previous_token(parser);
 }
 
@@ -300,9 +300,9 @@ consume(Parser* parser, enum TOKEN_TYPE type, const char* message)
 {
     if (check_token(parser, type)) return advance_parser(parser);
 
-    /* if we don't match the expected token just set errno and report parser error */
-    errno = EIO;
+    /* if we don't match the expected token just report parser error */
     parser_error(peek_token(parser), message);
+    advance_parser(parser);
     return (Token){ .type = INVALID_TOKEN_INT, .lexeme = NULL, .line = 0, .col = 0 };
 }
 
@@ -528,25 +528,57 @@ expression_rule(Parser* parser)
     return equality_rule(parser);
 }
 
-Expr*
-parse(Parser* parser)
-{
-    Expr* exp = expression_rule(parser);
-    if (exp == NULL) {
-        had_error = true;
-        return NULL;
-    }
-    if (exp->type == INVALID_EXPR_INT) had_error = true;
-    return exp;
-}
-
 void*
 allocate_statements(size_t count)
 {
     return malloc(count * sizeof(Statement));
 }
 
-Statement*
-parse_stmt(Parser* parser)
+static Statement
+print_statement(Parser* parser)
 {
+    Expr* value = expression_rule(parser);
+    Token semicolon = consume(parser, SEMICOLON, "Expected a ';' after expression.");
+    if (value->type == INVALID_EXPR_INT) had_error = true;
+
+    return (Statement){ .type = PRINT_STMT,
+                        .accept = &eval_print_stmt,
+                        .prtStmt = (Print_statement){ .expression = value,
+                                                      .semicolon = semicolon } };
+}
+
+static Statement
+expression_statement(Parser* parser)
+{
+    Expr* value = expression_rule(parser);
+    Token semicolon = consume(parser, SEMICOLON, "Expected a ';' after expression.");
+    if (value->type == INVALID_EXPR_INT) had_error = true;
+
+    return (Statement){ .type = EXPR_STMT,
+                        .accept = &eval_expr_stmt,
+                        .exStmt = (Expr_statement){ .expression = value,
+                                                    .semicolon = semicolon } };
+}
+
+static Statement
+statement(Parser* parser)
+{
+    if (match_token(parser, 1, PRINT)) return print_statement(parser);
+
+    return expression_statement(parser);
+}
+
+Statement*
+parse(Parser* parser)
+{
+    enum { STMT_CNT = 30 };
+
+    parser->statements = allocate_statements(STMT_CNT * sizeof(Statement));
+
+    while (!parser_is_at_end(parser)) {
+        parser->statements[parser->current_statement_idx++] = statement(parser);
+    }
+    parser->statements[0].count = parser->current_statement_idx;
+
+    return parser->statements;
 }

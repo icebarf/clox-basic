@@ -81,20 +81,25 @@ typedef struct {
     Token semicolon;
 } Expr_statement;
 
-typedef struct {
-    Expr* expression;
-    Token print;
-    Token semicolon;
-} Print_statement;
+typedef Expr_statement Print_statement;
 
-typedef union {
-    Expr_statement* exStmt;
-    Print_statement* prtStmt;
-} Statement;
+typedef struct Statement_t Statement;
+
+struct Statement_t {
+    union {
+        Expr_statement exStmt;
+        Print_statement prtStmt;
+    };
+    void (*accept)(Statement statement);
+    size_t count;
+    enum STMT_TYPE { EXPR_STMT, PRINT_STMT, BAD_STMT } type;
+};
 
 typedef struct {
     Token* tokens;
-    size_t current;
+    Statement* statements;
+    size_t current_token_idx;
+    size_t current_statement_idx;
 } Parser;
 
 /******* Functions ********/
@@ -111,8 +116,7 @@ allocate_expr(void);
 void
 deallocate_expr(Expr* expr);
 
-/* parse an expression from the given array of tokens */
-Expr*
+Statement*
 parse(Parser* parser);
 
 #endif

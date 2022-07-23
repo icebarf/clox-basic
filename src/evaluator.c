@@ -355,6 +355,7 @@ evaluate(Expr* expr)
             __builtin_unreachable();
     }
 }
+
 static char*
 stringify(Object object)
 {
@@ -385,19 +386,31 @@ stringify(Object object)
 static void
 deallocate_object(Object o)
 {
-    if (o.type == STRING) free(o.string);
+    if (o.type == NUMBER) free(o.string);
 }
 
 void
-interpret(Expr* expr)
+eval_expr_stmt(Statement statement)
 {
-    Object obj = expr->evaluate(expr);
-    if (obj.type == INVALID_TOKEN_INT) {
-        return;
-    }
-    char* str = stringify(obj);
-    fprintf(stdout, "%s\n", str);
-    if (obj.type == NUMBER) free(str);
-
+    Object obj = evaluate(statement.exStmt.expression);
     deallocate_object(obj);
+}
+
+void
+eval_print_stmt(Statement statement)
+{
+    Object obj = evaluate(statement.prtStmt.expression);
+    if (obj.type == INVALID_TOKEN_INT) return;
+
+    char* str = stringify(obj);
+    puts(str);
+    deallocate_object(obj);
+}
+
+void
+interpret(Statement* stmts)
+{
+    for (size_t i = 0; i < stmts->count; i++) {
+        stmts[i].accept(stmts[i]);
+    }
 }

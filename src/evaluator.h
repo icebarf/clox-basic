@@ -26,6 +26,12 @@ Object
 evaluate(Expr* expr);
 
 void
-interpret(Expr* expr);
+eval_expr_stmt(Statement statement);
+
+void
+eval_print_stmt(Statement statement);
+
+void
+interpret(Statement* stmts);
 
 #endif
