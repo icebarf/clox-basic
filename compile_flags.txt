@@ -2,4 +2,4 @@
 -Wno-unused-function
 -Wextra
 -std=c2x
--Iinclude/hashmap.h/
+-Iinclude/

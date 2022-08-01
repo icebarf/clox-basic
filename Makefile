@@ -8,7 +8,7 @@ else
     BIN := clox-basic
 endif
 
-CFLAGS += -Wall -Wextra
+CFLAGS += -Wall -Wextra -Wunused -pedantic -std=c2x
 
 DEBUG:=1
 # Release mode and flags
@@ -27,7 +27,7 @@ endif
 # The '/usr/local/*' is present to 
 # ensure compatibiltiy across distributions
 LDFLAGS += -L /usr/local/lib -lreadline -lm
-CFLAGS += -I /usr/local/include
+CFLAGS += -I /usr/local/include -I ./include
 
 # Static or dynamic linking
 STATICBIN=0
@@ -39,6 +39,7 @@ OBJ = \
 	src/ast_printer.o \
 	src/clox.o \
 	src/evaluator.o \
+	src/environment.o \
 	src/parser.o \
 	src/token.o \
 	src/scanner.o \
