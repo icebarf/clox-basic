@@ -363,14 +363,14 @@ scan_tokens(Scanner* scanner)
 {
     while (!scanner_is_at_end(scanner)) {
         if (scanner->tokens_count == scanner->token_max)
-            extend_tokens_by(scanner->tokens, scanner->tokens_count, TOKEN_CNT);
+            extend_tokens_by(&scanner->tokens, scanner->tokens_count, TOKEN_CNT);
         scanner->start = scanner->current;
         scan_unit_token(scanner);
     }
 
     /* make sure we have space for one more token */
     if (scanner->tokens_count == scanner->token_max)
-        extend_tokens_by(scanner->tokens, scanner->tokens_count, 2);
+        extend_tokens_by(&scanner->tokens, scanner->tokens_count, 2);
 
     add_token(scanner, ENDOF, 0, 0);
 

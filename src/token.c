@@ -169,9 +169,9 @@ allocate_tokens(size_t count)
  * @void* : extended block of memory obtained from realloc
  */
 void
-extend_tokens_by(Token* tokens, unsigned long prev_count, unsigned long count)
+extend_tokens_by(Token** tokens, unsigned long prev_count, unsigned long count)
 {
-    tokens = realloc(tokens, (prev_count + count) * sizeof(Token));
+    *tokens = realloc(*tokens, (prev_count + count) * sizeof(Token));
 }
 
 /* deallocate the tokens - free the lexemes and then the tokens block

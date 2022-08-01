@@ -27,16 +27,20 @@
 
 #include "evaluator.h"
 #include "parser.h"
+#include "program.h"
 #include "token.h"
 #include "utility.h"
+#include "environment.h"
 
-extern bool had_runtime_error;
 enum LIMITS { DOUBLE_MAX_DIG = 19 };
 
 /**** utility functions for the evaluator ****/
 
+Object
+evaluate_identifier(Env_manager* env_mgr, Expr* expr);
+
 static Object
-get_object_from_literal(Expr* expr)
+get_object_from_literal(Env_manager* env_mgr, Expr* expr)
 {
     if (expr->type != LITERAL) return (Object){ .type = INVALID_TOKEN_INT };
 
@@ -60,6 +64,10 @@ get_object_from_literal(Expr* expr)
                              .type = FALSE };
         case NIL:
             return (Object){ .string = expr->literal->value.lexeme, .type = NIL };
+
+        case IDENTIFIER:
+            return evaluate_identifier(env_mgr, expr);
+
         default:
             return (Object){ .type = INVALID_TOKEN_INT };
     }
@@ -171,29 +179,30 @@ check_number_operands(enum TOKEN_TYPE chktype, size_t objcnt, ...)
 }
 
 static void
-runtime_error(Token Operator, const char* message)
+runtime_error(Token Operator, const char* message, bool* had_runtime_error)
 {
     error(Operator.line, Operator.col, message);
-    had_runtime_error = true;
+    *had_runtime_error = true;
 }
 
 /****** Actual Evaluator code ******/
 static Object
-evaluate_literal(Expr* expr)
+evaluate_literal(Env_manager* env_mgr, Expr* expr)
 {
-    return get_object_from_literal(expr);
+    return get_object_from_literal(env_mgr, expr);
 }
 
 static Object
-evaluate_unary(Expr* expr)
+evaluate_unary(Env_manager* env_mgr, Expr* expr, bool* had_runtime_error)
 {
-    Object right = evaluate(expr->unary->right);
+    Object right = evaluate(env_mgr, expr->unary->right, had_runtime_error);
 
     switch (expr->unary->Operator.type) {
         case MINUS:
             if (!check_number_operands(NUMBER, 1, right)) {
                 runtime_error(expr->unary->Operator,
-                              "Runtime: Operand must be a number");
+                              "Runtime: Operand must be a number",
+                              had_runtime_error);
                 return (Object){ .type = INVALID_TOKEN_INT };
             }
             return (Object){ .number = -right.number, .type = NUMBER };
@@ -210,22 +219,23 @@ evaluate_unary(Expr* expr)
 }
 
 static Object
-evaluate_group(Expr* expr)
+evaluate_group(Env_manager* env_mgr, Expr* expr, bool* had_runtime_error)
 {
-    return evaluate(expr->group->expression);
+    return evaluate(env_mgr, expr->group->expression, had_runtime_error);
 }
 
 static Object
-evaluate_binary(Expr* expr)
+evaluate_binary(Env_manager* env_mgr, Expr* expr, bool* had_runtime_error)
 {
-    Object left = evaluate(expr->binary->left);
-    Object right = evaluate(expr->binary->right);
+    Object left = evaluate(env_mgr, expr->binary->left, had_runtime_error);
+    Object right = evaluate(env_mgr, expr->binary->right, had_runtime_error);
 
     switch (expr->binary->Operator.type) {
         case MINUS:
             if (!check_number_operands(NUMBER, 2, left, right)) {
                 runtime_error(expr->binary->Operator,
-                              "Runtime: Operands must be numbers");
+                              "Runtime: Operands must be numbers",
+                              had_runtime_error);
                 return (Object){ .type = INVALID_TOKEN_INT };
             }
             return (Object){ .number = left.number - right.number, .type = NUMBER };
@@ -245,22 +255,25 @@ evaluate_binary(Expr* expr)
 
                 memccpy(bigstr, left.string, '\0', left.string_len);
                 strncat(bigstr, right.string, right.string_len);
-                return (Object){ .string = bigstr, .type = STRING };
+                return (Object){ .string = bigstr, .type = STRING_2 };
             }
 
             runtime_error(expr->binary->Operator,
-                          "Runtime: Operands must either be a number or a string.");
+                          "Runtime: Operands must either be a number or a string.",
+                          had_runtime_error);
             return (Object){ .type = INVALID_TOKEN_INT };
 
         case SLASH:
             if (!check_number_operands(NUMBER, 2, left, right)) {
                 runtime_error(expr->binary->Operator,
-                              "Runtime: Operands must be numbers");
+                              "Runtime: Operands must be numbers",
+                              had_runtime_error);
                 return (Object){ .type = INVALID_TOKEN_INT };
             }
             if (is_floating_almost_equal(right.number, 0.0f)) {
                 runtime_error(expr->binary->Operator,
-                              "Runtime: Division by zero is not allowed.");
+                              "Runtime: Division by zero is not allowed.",
+                              had_runtime_error);
                 return (Object){ .type = INVALID_TOKEN_INT };
             }
             return (Object){ .number = left.number / right.number, .type = NUMBER };
@@ -268,12 +281,14 @@ evaluate_binary(Expr* expr)
         case MOD:
             if (!check_number_operands(NUMBER, 2, left, right)) {
                 runtime_error(expr->binary->Operator,
-                              "Runtime: Operands must be numbers");
+                              "Runtime: Operands must be numbers",
+                              had_runtime_error);
                 return (Object){ .type = INVALID_TOKEN_INT };
             }
             if (is_floating_almost_equal(right.number, 0.0f)) {
                 runtime_error(expr->binary->Operator,
-                              "Runtime: Division by zero is not allowed.");
+                              "Runtime: Division by zero is not allowed.",
+                              had_runtime_error);
                 return (Object){ .type = INVALID_TOKEN_INT };
             }
             return (Object){ .number = fmod(left.number, right.number),
@@ -282,7 +297,8 @@ evaluate_binary(Expr* expr)
         case STAR:
             if (!check_number_operands(NUMBER, 2, left, right)) {
                 runtime_error(expr->binary->Operator,
-                              "Runtime: Operands must be numbers");
+                              "Runtime: Operands must be numbers",
+                              had_runtime_error);
                 return (Object){ .type = INVALID_TOKEN_INT };
             }
             return (Object){ .number = left.number * right.number, .type = NUMBER };
@@ -290,7 +306,8 @@ evaluate_binary(Expr* expr)
         case GREATER: {
             if (!check_number_operands(NUMBER, 2, left, right)) {
                 runtime_error(expr->binary->Operator,
-                              "Runtime: Operands must be numbers");
+                              "Runtime: Operands must be numbers",
+                              had_runtime_error);
                 return (Object){ .type = INVALID_TOKEN_INT };
             }
             bool what = isgreater(left.number, right.number);
@@ -299,7 +316,8 @@ evaluate_binary(Expr* expr)
         case GREATER_EQUAL: {
             if (!check_number_operands(NUMBER, 2, left, right)) {
                 runtime_error(expr->binary->Operator,
-                              "Runtime: Operands must be numbers");
+                              "Runtime: Operands must be numbers",
+                              had_runtime_error);
                 return (Object){ .type = INVALID_TOKEN_INT };
             }
             bool what = isgreaterequal(left.number, right.number);
@@ -308,7 +326,8 @@ evaluate_binary(Expr* expr)
         case LESS: {
             if (!check_number_operands(NUMBER, 2, left, right)) {
                 runtime_error(expr->binary->Operator,
-                              "Runtime: Operands must be numbers");
+                              "Runtime: Operands must be numbers",
+                              had_runtime_error);
                 return (Object){ .type = INVALID_TOKEN_INT };
             }
             bool what = isless(left.number, right.number);
@@ -317,7 +336,8 @@ evaluate_binary(Expr* expr)
         case LESS_EQUAL: {
             if (!check_number_operands(NUMBER, 2, left, right)) {
                 runtime_error(expr->binary->Operator,
-                              "Runtime: Operands must be numbers");
+                              "Runtime: Operands must be numbers",
+                              had_runtime_error);
                 return (Object){ .type = INVALID_TOKEN_INT };
             }
             bool what = islessequal(left.number, right.number);
@@ -340,17 +360,40 @@ evaluate_binary(Expr* expr)
 }
 
 Object
-evaluate(Expr* expr)
+evaluate_identifier(Env_manager* env_mgr, Expr* expr)
 {
+    return get_value(env_mgr, expr->literal->value, env_mgr->env_idx);
+}
+
+static Object
+evaluate_assignment(Env_manager* env_mgr, Expr* expr, bool* had_runtime_error)
+{
+    Object value = evaluate(env_mgr, expr->variable->value, had_runtime_error);
+    if (value.type != INVALID_TOKEN_INT)
+        assign(env_mgr, expr->variable->name, value, env_mgr->env_idx);
+    else {
+        value = (Object){ .string = expr->variable->name.lexeme,
+                          .string_len = expr->variable->name.lexeme_len,
+                          .type = IDENTIFIER };
+    }
+    return value;
+}
+
+Object
+evaluate(Env_manager* env_mgr, Expr* expr, bool* had_runtime_error)
+{
+    if (expr == NULL) return (Object){ .type = INVALID_TOKEN_INT };
     switch (expr->type) {
         case LITERAL:
-            return evaluate_literal(expr);
+            return evaluate_literal(env_mgr, expr);
         case UNARY:
-            return evaluate_unary(expr);
+            return evaluate_unary(env_mgr, expr, had_runtime_error);
         case GROUPING:
-            return evaluate_group(expr);
+            return evaluate_group(env_mgr, expr, had_runtime_error);
         case BINARY:
-            return evaluate_binary(expr);
+            return evaluate_binary(env_mgr, expr, had_runtime_error);
+        case VARIABLE:
+            return evaluate_assignment(env_mgr, expr, had_runtime_error);
         default:
             __builtin_unreachable();
     }
@@ -367,7 +410,7 @@ stringify(Object object)
         return str;
     }
 
-    if (object.type == STRING) {
+    if (object.type == STRING || object.type == STRING_2) {
         return object.string;
     }
 
@@ -383,34 +426,60 @@ stringify(Object object)
     return NULL;
 }
 
-static void
-deallocate_object(Object o)
+void
+eval_expr_stmt(Env_manager* env_mgr, Statement statement, bool* had_runtime_error)
 {
-    if (o.type == NUMBER) free(o.string);
+    evaluate(env_mgr, statement.exStmt.expression, had_runtime_error);
 }
 
 void
-eval_expr_stmt(Statement statement)
+eval_print_stmt(Env_manager* env_mgr, Statement statement, bool* had_runtime_error)
 {
-    Object obj = evaluate(statement.exStmt.expression);
-    deallocate_object(obj);
-}
-
-void
-eval_print_stmt(Statement statement)
-{
-    Object obj = evaluate(statement.prtStmt.expression);
+    char* str = NULL;
+    Object obj = evaluate(env_mgr, statement.prtStmt.expression, had_runtime_error);
     if (obj.type == INVALID_TOKEN_INT) return;
 
-    char* str = stringify(obj);
+    if (obj.type == IDENTIFIER)
+        obj = evaluate_identifier(env_mgr, statement.prtStmt.expression);
+
+    str = stringify(obj);
     puts(str);
-    deallocate_object(obj);
+    if (obj.type == NUMBER || (obj.type == STRING_2)) free(str);
 }
 
 void
-interpret(Statement* stmts)
+eval_var_stmt(Env_manager* env_mgr, Statement statement, bool* had_runtime_error)
 {
-    for (size_t i = 0; i < stmts->count; i++) {
-        stmts[i].accept(stmts[i]);
+    Object obj = { .type = NIL };
+    if (statement.vardecl.initialiser != NULL)
+        obj = evaluate(env_mgr, statement.vardecl.initialiser, had_runtime_error);
+
+    define(env_mgr, statement.vardecl.name.lexeme, obj, env_mgr->env_idx);
+}
+
+void
+eval_block(Env_manager* env_mgr, Statement statement, bool* had_runtime_error)
+{
+    Statement* block = statement.block.statements;
+
+    for (size_t i = 0; i < block[0].count; i++) {
+        block[i].accept(env_mgr, block[i], had_runtime_error);
+    }
+
+    size_t cnt = block[0].count;
+    for (size_t i = 0; i < cnt; i++) {
+        if (block[i].type == EXPR_STMT || PRINT_STMT)
+            deallocate_expr(block[i].exStmt.expression);
+        if (block[i].type == VAR_DECL_STMT)
+            deallocate_expr(block[i].vardecl.initialiser);
+    }
+}
+
+void
+interpret(Program* program)
+{
+    for (size_t i = 0; i < program->statements[0].count; i++) {
+        program->statements[i].accept(
+          program->env_mgr, program->statements[i], &program->had_runtime_error);
     }
 }

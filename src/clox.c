@@ -28,7 +28,9 @@
 
 #include "ast_printer.h"
 #include "evaluator.h"
+#include "environment.h"
 #include "parser.h"
+#include "program.h"
 #include "scanner.h"
 #include "token.h"
 #include "utility.h"
@@ -43,34 +45,33 @@ bool had_runtime_error = false;
  * @buf_len : size of the buffer to be interpreted
  */
 void
-run(const char* buffer, size_t buf_len)
+run(const char* buffer, size_t buf_len, Program* program)
 {
-    Scanner scanner = init_scanner(buffer, buf_len);
-    scan_tokens(&scanner);
+    *program->scanner = init_scanner(buffer, buf_len);
+    scan_tokens(program->scanner);
 
-    Parser parser = init_parser(scanner.tokens);
-    Statement* stmts = parse(&parser);
+    *program->parser = init_parser(program->scanner->tokens);
+    Statement* stmts = parse(program);
+
+    program->statements = stmts;
+
+    program->toks_list =
+      realloc(program->toks_list, sizeof(Token*) * (program->toks_list_cnt + 1));
+    program->tok_cnt =
+      realloc(program->tok_cnt, sizeof(size_t) * (program->toks_list_cnt + 1));
+    program->toks_list[program->toks_list_cnt] = program->scanner->tokens;
+    program->tok_cnt[program->toks_list_cnt++] = program->scanner->tokens_count;
 
     if (had_error) goto expr_end;
 
-    // for (size_t i = 0; i <= scanner.tokens_count; i++) {
-    //     const char* str = token_to_str(&scanner.tokens[i]);
-    //     fprintf(stdout, "%s\n", str);
-    //     free((void*)str);
-    // }
+    interpret(program);
 
-    // fprintf(stdout, "\n(");
-    // expression->accept(expression);
-    // fprintf(stdout, ")\n");
-
-    interpret(parser.statements);
-
-expr_end:
-    for (size_t i = 0; i < stmts[0].count; i++) {
-        free(stmts[i].exStmt.expression);
+    for (size_t i = 0; i < program->parser->statements[0].count; i++) {
+        deallocate_expr(program->parser->statements[i].exStmt.expression);
     }
+    free(program->statements);
+expr_end:
     free((void*)buffer);
-    deallocate_tokens(scanner.tokens, scanner.tokens_count);
 }
 
 /* run the interpreter with a file
@@ -78,11 +79,11 @@ expr_end:
  * @filename : the name of file to be interpreted
  */
 void
-runfile(const char* filename)
+runfile(const char* filename, Program* program)
 {
     size_t filesize = 0;
     const char* filebuffer = readfile(filename, &filesize);
-    run(filebuffer, filesize);
+    run(filebuffer, filesize, program);
 
     if (had_error) exit(EX_DATAERR);
     if (had_runtime_error) exit(EX_SOFTWARE);
@@ -90,14 +91,14 @@ runfile(const char* filename)
 
 /* run the interpreter as a RPEL*/
 void
-run_prompt(void)
+run_prompt(Program* program)
 {
     for (;;) {
         char* line = readline("> ");
         if (line == NULL) return;
 
         add_history(line);
-        run(line, strlen(line));
+        run(line, strlen(line), program);
         had_error = false;
     }
 }
@@ -105,12 +106,32 @@ run_prompt(void)
 int
 main(int argc, char** argv)
 {
+    Environment** env = calloc(1, sizeof(Environment*));
+    Env_manager env_mgr = { .envs = env, .env_idx = 0 };
+    Scanner* scanner = malloc(sizeof(Scanner));
+    Parser* parser = malloc(sizeof(Parser));
+
+    Program program = { .env_mgr = &env_mgr, .parser = parser, .scanner = scanner };
+
+    sh_new_arena(program.env_mgr->envs[0]);
+
     if (argc > 2) {
         fprintf(stderr, "Usage: clox [script]\n");
         exit(EX_USAGE);
     } else if (argc == 2) {
-        runfile(argv[1]);
+        runfile(argv[1], &program);
     }
 
-    run_prompt();
+    run_prompt(&program);
+
+    for_range(i, program.env_mgr->env_idx) shfree(program.env_mgr->envs[i]);
+
+    for_range(i, program.toks_list_cnt)
+      deallocate_tokens(program.toks_list[i], program.tok_cnt[i]);
+
+    free(program.toks_list);
+    free(program.tok_cnt);
+    free(program.env_mgr->envs);
+    free(program.scanner);
+    free(program.parser);
 }

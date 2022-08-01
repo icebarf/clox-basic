@@ -70,7 +70,9 @@ enum TOKEN_TYPE {
     WHILE,
 
     ENDOF,
-    // invalid token value - meant for internal use
+
+    // Internal Token Types
+    STRING_2,
     INVALID_TOKEN_INT
 };
 
@@ -103,7 +105,7 @@ allocate_tokens(size_t count);
 /* extend the memory allocated for tokens by    'prev_count + count'
  * Note: 'count' is the amount of new tokens to be added not sum ^ */
 void
-extend_tokens_by(Token* tokens,
+extend_tokens_by(Token** tokens,
                  const unsigned long prev_count,
                  const unsigned long count);
 

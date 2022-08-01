@@ -27,7 +27,14 @@
 #include "token.h"
 
 typedef struct Expr_t Expr;
+typedef struct Program_t Program;
+typedef struct Env_t Environment;
 typedef struct {
+    Environment** envs;
+    size_t env_idx;
+} Env_manager;
+
+typedef struct Object_t {
     union {
         double number;
         bool boolean;
@@ -43,24 +50,30 @@ struct Binary_e {
     Expr* left;
     Expr* right;
     // visitor pattern. Make the expression visit any function.
-    void (*accept)(struct Binary_e*);
+    void (*accept)(Env_manager* env_mgr, struct Binary_e*);
     bool nests;
 };
 
 struct Grouping_e {
     Expr* expression;
-    void (*accept)(struct Grouping_e*);
+    void (*accept)(Env_manager* env_mgr, struct Grouping_e*);
 };
 
 struct Unary_e {
     Token Operator;
     Expr* right;
-    void (*accept)(struct Unary_e*);
+    void (*accept)(Env_manager* env_mgr, struct Unary_e*);
 };
 
 struct Literal_e {
     Token value;
-    void (*accept)(struct Literal_e*);
+    void (*accept)(Env_manager* env_mgr, struct Literal_e*);
+};
+
+struct Variable_e {
+    Token name;
+    Expr* value;
+    void (*accept)(Env_manager* env_mgr, struct Variable_e*);
 };
 
 /* the molecule - expression */
@@ -70,29 +83,55 @@ struct Expr_t {
         struct Grouping_e* group;
         struct Unary_e* unary;
         struct Literal_e* literal;
+        struct Variable_e* variable;
     };
     void (*accept)(Expr*);
-    Object (*evaluate)(Expr*);
-    enum EXPR_TYPES { LITERAL, UNARY, BINARY, GROUPING, INVALID_EXPR_INT } type;
+    Object (*evaluate)(Env_manager* env_mgr, Expr*, bool*);
+    enum EXPR_TYPES {
+        LITERAL,
+        UNARY,
+        BINARY,
+        GROUPING,
+        VARIABLE,
+        INVALID_EXPR_INT
+    } type;
 };
 
 typedef struct {
-    Expr* expression;
     Token semicolon;
+    Expr* expression;
 } Expr_statement;
 
 typedef Expr_statement Print_statement;
 
+typedef struct {
+    Token name;
+    Expr* initialiser;
+} Var_decl;
+
 typedef struct Statement_t Statement;
+
+typedef struct {
+    Statement* statements;
+} Block;
 
 struct Statement_t {
     union {
         Expr_statement exStmt;
         Print_statement prtStmt;
+        Var_decl vardecl;
+        Block block;
     };
-    void (*accept)(Statement statement);
+    void (*accept)(Env_manager* env_mgr, Statement, bool*);
     size_t count;
-    enum STMT_TYPE { EXPR_STMT, PRINT_STMT, BAD_STMT } type;
+    size_t env_idx;
+    enum STMT_TYPE {
+        EXPR_STMT,
+        PRINT_STMT,
+        VAR_DECL_STMT,
+        BLOCK_STMT,
+        BAD_STMT
+    } type;
 };
 
 typedef struct {
@@ -100,6 +139,7 @@ typedef struct {
     Statement* statements;
     size_t current_token_idx;
     size_t current_statement_idx;
+    bool had_error;
 } Parser;
 
 /******* Functions ********/
@@ -117,6 +157,6 @@ void
 deallocate_expr(Expr* expr);
 
 Statement*
-parse(Parser* parser);
+parse(Program* program);
 
 #endif

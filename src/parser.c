@@ -17,29 +17,32 @@
 // You should have received a copy of the GNU General Public License along with
 // clox-basic. If not, see <https://www.gnu.org/licenses/>.
 
-#include <asm-generic/errno-base.h>
 #include <errno.h>
 #include <stdarg.h>
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <sysexits.h>
 
 #include "ast_printer.h"
+#include "environment.h"
 #include "evaluator.h"
 #include "parser.h"
+#include "program.h"
 #include "token.h"
 #include "utility.h"
 
-extern bool had_error;
+enum { STMT_CNT = 30 };
+
 /***** parser utility functions *****/
 
 struct Binary_e
 init_binary_expr(Expr* left,
                  Token Operator,
                  Expr* right,
-                 void (*visitor)(struct Binary_e*))
+                 void (*visitor)(Env_manager* env_mgr, struct Binary_e*))
 {
     return (struct Binary_e){ .left = left,
                               .Operator = Operator,
@@ -49,29 +52,41 @@ init_binary_expr(Expr* left,
 }
 
 struct Grouping_e
-init_group_expr(Expr* expression, void (*visitor)(struct Grouping_e*))
+init_group_expr(Expr* expression,
+                void (*visitor)(Env_manager* env_mgr, struct Grouping_e*))
 {
     return (struct Grouping_e){ .expression = expression, .accept = visitor };
 }
 
 struct Unary_e
-init_unary_expr(Token Operator, Expr* right, void (*visitor)(struct Unary_e*))
+init_unary_expr(Token Operator,
+                Expr* right,
+                void (*visitor)(Env_manager* env_mgr, struct Unary_e*))
 {
     return (
       struct Unary_e){ .Operator = Operator, .right = right, .accept = visitor };
 }
 
 struct Literal_e
-init_literal_expression(Token token, void (*visitor)(struct Literal_e*))
+init_literal_expr(Token token,
+                  void (*visitor)(Env_manager* env_mgr, struct Literal_e*))
 {
     return (struct Literal_e){ .value = token, .accept = visitor };
+}
+
+struct Variable_e
+init_variable_expr(Token name,
+                   Expr* rvalue,
+                   void (*visitor)(Env_manager* env_mgr, struct Variable_e*))
+{
+    return (struct Variable_e){ .name = name, .value = rvalue, .accept = visitor };
 }
 
 Expr
 init_expression(enum EXPR_TYPES type,
                 void* holder,
                 void (*visitor)(Expr*),
-                Object (*evaluator)(Expr*))
+                Object (*evaluator)(Env_manager* env_mgr, Expr*, bool*))
 {
     Expr expr = { .type = type, .accept = visitor, .evaluate = evaluator };
     switch (type) {
@@ -115,6 +130,9 @@ MEM_LOG(enum EXPR_TYPES cond)
             break;
         case LITERAL:
             puts("Deallocating Literal Expression");
+            break;
+        case VARIABLE:
+            puts("Deallocating Variable RHS expression");
             break;
         case INVALID_EXPR_INT:
             puts("Deallocating Invalid Expression");
@@ -173,12 +191,17 @@ deallocate_expr(Expr* expr)
             MEM_LOG(LITERAL);
             free(expr);
         } break;
+        case VARIABLE: {
+            deallocate_expr(expr->variable->value);
+            MEM_LOG_DEALLOC(struct Variable_e, expr->variable);
+            MEM_LOG(VARIABLE);
+            free(expr);
+            break;
+        }
         case INVALID_EXPR_INT: {
             MEM_LOG(INVALID_EXPR_INT);
             free(expr);
         }
-        default:
-            return;
     }
 }
 
@@ -303,7 +326,7 @@ consume(Parser* parser, enum TOKEN_TYPE type, const char* message)
     /* if we don't match the expected token just report parser error */
     parser_error(peek_token(parser), message);
     advance_parser(parser);
-    return (Token){ .type = INVALID_TOKEN_INT, .lexeme = NULL, .line = 0, .col = 0 };
+    return (Token){ .type = INVALID_TOKEN_INT };
 }
 
 Expr*
@@ -317,10 +340,10 @@ primary_rule(Parser* parser)
         token = previous_token(parser);
 
         literal = MEM_LOG_ALLOC(struct Literal_e);
-        *literal = init_literal_expression(token, &literal_to_str);
+        *literal = init_literal_expr(token, NULL);
 
         expr = MEM_LOG_ALLOC(Expr);
-        *expr = init_expression(LITERAL, literal, &print_expr, &evaluate);
+        *expr = init_expression(LITERAL, literal, NULL, &evaluate);
         return expr;
     }
 
@@ -328,10 +351,10 @@ primary_rule(Parser* parser)
         token = previous_token(parser);
 
         literal = MEM_LOG_ALLOC(struct Literal_e);
-        *literal = init_literal_expression(token, &literal_to_str);
+        *literal = init_literal_expr(token, NULL);
 
         expr = MEM_LOG_ALLOC(Expr);
-        *expr = init_expression(LITERAL, literal, &print_expr, &evaluate);
+        *expr = init_expression(LITERAL, literal, NULL, &evaluate);
         return expr;
     }
 
@@ -339,10 +362,10 @@ primary_rule(Parser* parser)
         token = previous_token(parser);
 
         literal = MEM_LOG_ALLOC(struct Literal_e);
-        *literal = init_literal_expression(token, &literal_to_str);
+        *literal = init_literal_expr(token, NULL);
 
         expr = MEM_LOG_ALLOC(Expr);
-        *expr = init_expression(LITERAL, literal, &print_expr, &evaluate);
+        *expr = init_expression(LITERAL, literal, NULL, &evaluate);
         return expr;
     }
 
@@ -350,10 +373,10 @@ primary_rule(Parser* parser)
         token = previous_token(parser);
 
         literal = MEM_LOG_ALLOC(struct Literal_e);
-        *literal = init_literal_expression(token, &literal_to_str);
+        *literal = init_literal_expr(token, NULL);
 
         expr = MEM_LOG_ALLOC(Expr);
-        *expr = init_expression(LITERAL, literal, &print_expr, &evaluate);
+        *expr = init_expression(LITERAL, literal, NULL, &evaluate);
         return expr;
     }
 
@@ -361,10 +384,21 @@ primary_rule(Parser* parser)
         token = previous_token(parser);
 
         literal = MEM_LOG_ALLOC(struct Literal_e);
-        *literal = init_literal_expression(token, &literal_to_str);
+        *literal = init_literal_expr(token, NULL);
 
         expr = MEM_LOG_ALLOC(Expr);
-        *expr = init_expression(LITERAL, literal, &print_expr, &evaluate);
+        *expr = init_expression(LITERAL, literal, NULL, &evaluate);
+        return expr;
+    }
+
+    if (match_token(parser, 1, IDENTIFIER)) {
+        token = previous_token(parser);
+
+        literal = MEM_LOG_ALLOC(struct Variable_e);
+        *literal = init_literal_expr(token, NULL);
+
+        expr = MEM_LOG_ALLOC(Expr);
+        *expr = init_expression(LITERAL, literal, NULL, &evaluate);
         return expr;
     }
 
@@ -374,10 +408,10 @@ primary_rule(Parser* parser)
         consume(parser, RIGHT_PAREN, "Expected a ')' after expression.");
 
         struct Grouping_e* grp = MEM_LOG_ALLOC(struct Grouping_e);
-        *grp = init_group_expr(expr, &grouping_to_str);
+        *grp = init_group_expr(expr, NULL);
 
         Expr* gexpr = MEM_LOG_ALLOC(Expr);
-        *gexpr = init_expression(GROUPING, grp, &print_expr, &evaluate);
+        *gexpr = init_expression(GROUPING, grp, NULL, &evaluate);
 
         return gexpr;
     }
@@ -400,10 +434,10 @@ unary_rule(Parser* parser)
         }
 
         struct Unary_e* unary = MEM_LOG_ALLOC(struct Unary_e);
-        *unary = init_unary_expr(Operator, right, &unary_to_str);
+        *unary = init_unary_expr(Operator, right, NULL);
 
         Expr* unary_expr = MEM_LOG_ALLOC(Expr);
-        *unary_expr = init_expression(UNARY, unary, &print_expr, &evaluate);
+        *unary_expr = init_expression(UNARY, unary, NULL, &evaluate);
         return unary_expr;
     }
 
@@ -427,11 +461,11 @@ factor_rule(Parser* parser)
         }
 
         struct Binary_e* binary = MEM_LOG_ALLOC(struct Binary_e);
-        *binary = init_binary_expr(binary_expr, Operator, right, &binary_to_str);
+        *binary = init_binary_expr(binary_expr, Operator, right, NULL);
         if (cnt) binary->nests = true;
 
         binary_expr = MEM_LOG_ALLOC(Expr);
-        *binary_expr = init_expression(BINARY, binary, &print_expr, &evaluate);
+        *binary_expr = init_expression(BINARY, binary, NULL, &evaluate);
         cnt++;
     }
 
@@ -455,11 +489,11 @@ term_rule(Parser* parser)
         }
 
         struct Binary_e* binary = MEM_LOG_ALLOC(struct Binary_e);
-        *binary = init_binary_expr(binary_expr, Operator, right, &binary_to_str);
+        *binary = init_binary_expr(binary_expr, Operator, right, NULL);
         if (cnt) binary->nests = true;
 
         binary_expr = MEM_LOG_ALLOC(Expr);
-        *binary_expr = init_expression(BINARY, binary, &print_expr, &evaluate);
+        *binary_expr = init_expression(BINARY, binary, NULL, &evaluate);
         cnt++;
     }
 
@@ -483,11 +517,11 @@ comparison_rule(Parser* parser)
         }
 
         struct Binary_e* binary = MEM_LOG_ALLOC(struct Binary_e);
-        *binary = init_binary_expr(binary_expr, Operator, right, &binary_to_str);
+        *binary = init_binary_expr(binary_expr, Operator, right, NULL);
         if (cnt) binary->nests = true;
 
         binary_expr = MEM_LOG_ALLOC(Expr);
-        *binary_expr = init_expression(BINARY, binary, &print_expr, &evaluate);
+        *binary_expr = init_expression(BINARY, binary, NULL, &evaluate);
         cnt++;
     }
 
@@ -511,11 +545,11 @@ equality_rule(Parser* parser)
         }
 
         struct Binary_e* binary = MEM_LOG_ALLOC(struct Binary_e);
-        *binary = init_binary_expr(binary_expr, Operator, right, &binary_to_str);
+        *binary = init_binary_expr(binary_expr, Operator, right, NULL);
         if (cnt) binary->nests = true;
 
         binary_expr = MEM_LOG_ALLOC(Expr);
-        *binary_expr = init_expression(BINARY, binary, &print_expr, &evaluate);
+        *binary_expr = init_expression(BINARY, binary, NULL, &evaluate);
         cnt++;
     }
 
@@ -523,9 +557,37 @@ equality_rule(Parser* parser)
 }
 
 Expr*
+assignment_rule(Parser* parser)
+{
+    Expr* expr = equality_rule(parser);
+
+    if (match_token(parser, 1, EQUAL)) {
+        Token equals = previous_token(parser);
+        Expr* rvalue = assignment_rule(parser);
+
+        if (expr->type == VARIABLE) {
+            Token name = expr->variable->name;
+            deallocate_expr(expr);
+
+            struct Variable_e* assign = MEM_LOG_ALLOC(struct Variable_e);
+            *assign = init_variable_expr(name, rvalue, NULL);
+
+            Expr* assigned = MEM_LOG_ALLOC(Expr);
+            *assigned = init_expression(VARIABLE, assign, NULL, &evaluate);
+
+            return assigned;
+        }
+
+        REPORT_PARSER_ERROR_INTERNAL(equals, "Invalid lvalue for assignment.");
+    }
+
+    return expr;
+}
+
+Expr*
 expression_rule(Parser* parser)
 {
-    return equality_rule(parser);
+    return assignment_rule(parser);
 }
 
 void*
@@ -535,50 +597,153 @@ allocate_statements(size_t count)
 }
 
 static Statement
-print_statement(Parser* parser)
+print_statement(Parser* parser, Env_manager* env_mgr)
 {
     Expr* value = expression_rule(parser);
     Token semicolon = consume(parser, SEMICOLON, "Expected a ';' after expression.");
-    if (value->type == INVALID_EXPR_INT) had_error = true;
+    if (value->type == INVALID_EXPR_INT) parser->had_error = true;
+    if (semicolon.type == INVALID_TOKEN_INT) {
+        deallocate_expr(value);
+        parser->had_error = true;
+    }
 
     return (Statement){ .type = PRINT_STMT,
                         .accept = &eval_print_stmt,
                         .prtStmt = (Print_statement){ .expression = value,
-                                                      .semicolon = semicolon } };
+                                                      .semicolon = semicolon },
+                        .env_idx = env_mgr->env_idx };
 }
 
 static Statement
-expression_statement(Parser* parser)
+expression_statement(Parser* parser, Env_manager* env_mgr)
 {
     Expr* value = expression_rule(parser);
     Token semicolon = consume(parser, SEMICOLON, "Expected a ';' after expression.");
-    if (value->type == INVALID_EXPR_INT) had_error = true;
+    if (value->type == INVALID_EXPR_INT) parser->had_error = true;
+    if (semicolon.type == INVALID_TOKEN_INT) {
+        deallocate_expr(value);
+        parser->had_error = true;
+    }
 
     return (Statement){ .type = EXPR_STMT,
                         .accept = &eval_expr_stmt,
                         .exStmt = (Expr_statement){ .expression = value,
-                                                    .semicolon = semicolon } };
+                                                    .semicolon = semicolon },
+                        .env_idx = env_mgr->env_idx };
 }
 
 static Statement
-statement(Parser* parser)
+var_declaration(Parser* parser, Env_manager* env_mgr)
 {
-    if (match_token(parser, 1, PRINT)) return print_statement(parser);
+    Token name = consume(parser, IDENTIFIER, "Expected identifier.");
+    Expr* init = NULL;
 
-    return expression_statement(parser);
+    if (match_token(parser, 1, EQUAL)) {
+        init = expression_rule(parser);
+        if (init->type == INVALID_EXPR_INT) parser->had_error = true;
+    }
+
+    Token semicolon = consume(parser, SEMICOLON, "Expected a ';' after expression.");
+    if (semicolon.type == INVALID_TOKEN_INT) {
+        deallocate_expr(init);
+        parser->had_error = true;
+    }
+
+    return (Statement){ .type = VAR_DECL_STMT,
+                        .vardecl = (Var_decl){ .name = name, .initialiser = init },
+                        .accept = &eval_var_stmt,
+                        .env_idx = env_mgr->env_idx };
+}
+
+static Statement
+declaration(Parser* parser, Env_manager* env_mgr);
+
+static Statement
+block(Parser* parser, Env_manager* env_mgr)
+{
+    Statement* statements = allocate_statements(STMT_CNT * sizeof(Statement));
+    size_t idx = 0;
+    size_t cnt = 0;
+    size_t have_stmts = 0;
+
+    env_mgr->envs =
+      realloc(env_mgr->envs, (sizeof(Environment*) * 1) + env_mgr->env_idx);
+
+    sh_new_arena(env_mgr->envs[env_mgr->env_idx]);
+    env_mgr->env_idx++;
+
+    while (!check_token(parser, RIGHT_BRACE) && !parser_is_at_end(parser)) {
+        if (cnt == have_stmts) {
+            statements = realloc(statements, have_stmts * 2 * sizeof(Statement));
+            if (statements == NULL) {
+                REPORT_PARSER_ERROR_INTERNAL((Token){ .type = INVALID_TOKEN_INT },
+                                             "Out of memory");
+                exit(EX_OSERR);
+            }
+            have_stmts *= 2;
+        }
+        statements[idx] = declaration(parser, env_mgr);
+        statements[idx].env_idx = env_mgr->env_idx;
+        cnt++;
+    }
+
+    statements[0].count = idx - 1;
+
+    consume(parser, RIGHT_BRACE, "Expected a '}' after block.");
+
+    return (Statement){ .block = (Block){ .statements = statements },
+                        .type = BLOCK_STMT,
+                        .accept = eval_block,
+                        .env_idx = env_mgr->env_idx };
+}
+
+static Statement
+statement(Parser* parser, Env_manager* env_mgr)
+{
+    if (match_token(parser, 1, PRINT)) return print_statement(parser, env_mgr);
+    if (match_token(parser, 1, LEFT_BRACE)) return block(parser, env_mgr);
+
+    return expression_statement(parser, env_mgr);
+}
+
+static Statement
+declaration(Parser* parser, Env_manager* env_mgr)
+{
+    if (match_token(parser, 1, VAR)) return var_declaration(parser, env_mgr);
+
+    return statement(parser, env_mgr);
 }
 
 Statement*
-parse(Parser* parser)
+parse(Program* program)
 {
-    enum { STMT_CNT = 30 };
+    program->parser->statements = allocate_statements(STMT_CNT * sizeof(Statement));
+    size_t cnt = 0;
+    size_t have_stmts = STMT_CNT;
 
-    parser->statements = allocate_statements(STMT_CNT * sizeof(Statement));
+    while (!parser_is_at_end(program->parser)) {
+        if (cnt == have_stmts) {
+            program->parser->statements = realloc(
+              program->parser->statements, have_stmts * 2 * sizeof(Statement));
+            if (program->parser->statements == NULL) {
+                REPORT_PARSER_ERROR_INTERNAL((Token){ .type = INVALID_TOKEN_INT },
+                                             "Out of memory");
+                exit(EX_OSERR);
+            }
+            have_stmts *= 2;
+        }
 
-    while (!parser_is_at_end(parser)) {
-        parser->statements[parser->current_statement_idx++] = statement(parser);
+        program->parser->statements[program->parser->current_statement_idx++] =
+          declaration(program->parser, program->env_mgr);
+
+        if (program->parser->had_error) {
+            syncronize_parser(program->parser);
+            free(program->parser->statements);
+            return NULL;
+        }
+        cnt++;
     }
-    parser->statements[0].count = parser->current_statement_idx;
+    program->parser->statements[0].count = program->parser->current_statement_idx;
 
-    return parser->statements;
+    return program->parser->statements;
 }

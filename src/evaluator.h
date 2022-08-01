@@ -20,18 +20,25 @@
 #ifndef CLOX_BASIC_EVALUATOR_H
 #define CLOX_BASIC_EVALUATOR_H
 
-#include "parser.h"
+#include "environment.h"
+#include <stdbool.h>
 
 Object
-evaluate(Expr* expr);
+evaluate(Env_manager* env_mgr, Expr* expr, bool* had_runtime_error);
 
 void
-eval_expr_stmt(Statement statement);
+eval_expr_stmt(Env_manager* env_mgr, Statement statement, bool* had_runtime_error);
 
 void
-eval_print_stmt(Statement statement);
+eval_print_stmt(Env_manager* env_mgr, Statement statement, bool* had_runtime_error);
 
 void
-interpret(Statement* stmts);
+eval_var_stmt(Env_manager* env_mgr, Statement statement, bool* had_runtime_error);
+
+void
+eval_block(Env_manager* env_mgr, Statement statement, bool* had_runtime_error);
+
+void
+interpret(Program* program);
 
 #endif
