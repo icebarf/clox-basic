@@ -10,7 +10,7 @@ Here are the functionalities built
 - [x] Abstract Syntax Tree
 - [x] Parser
 - [x] Evaluation
-- [ ] Statements
+- [x] Statements
 - [ ] Control Flow
 - [ ] Functions
 - [ ] Name resolving and binding
@@ -20,3 +20,6 @@ Here are the functionalities built
 
 - GNU Readline
 - Make
+- [stb_ds.h](https://github.com/nothings/stb/blob/master/stb_ds.h)
+
+> stb_ds.h is shipped with the project.
