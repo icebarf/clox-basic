@@ -43,6 +43,8 @@
 
 #define UNUSED(X) (void)X
 
+#define for_range(I, R) for (size_t(I) = 0; (I) < (R); (I)++)
+
 /* reads a file into a heap-allocated buffer and
  * returns the pointer after reading the file */
 char*
