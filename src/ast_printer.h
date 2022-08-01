@@ -41,5 +41,5 @@ grouping_to_str(struct Grouping_e* grp);
 
 /* print an expression */
 void
-print_expr(Expr* ex);
+print_expr(Env_manager*, Expr*);
 #endif

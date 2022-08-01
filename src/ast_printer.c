@@ -99,7 +99,7 @@ grouping_to_str(struct Grouping_e* grp)
 }
 
 void
-print_expr(Expr* ex)
+print_expr(Env_manager* env, Expr* ex)
 {
     if (ex == NULL) {
         ast_error();
@@ -107,16 +107,16 @@ print_expr(Expr* ex)
     }
     switch (ex->type) {
         case LITERAL:
-            ex->literal->accept(ex->literal);
+            ex->literal->accept(env, ex->literal);
             break;
         case UNARY:
-            ex->unary->accept(ex->unary);
+            ex->unary->accept(env, ex->unary);
             break;
         case BINARY:
-            ex->binary->accept(ex->binary);
+            ex->binary->accept(env, ex->binary);
             break;
         case GROUPING:
-            ex->group->accept(ex->group);
+            ex->group->accept(env, ex->group);
             break;
         default:
             break;
