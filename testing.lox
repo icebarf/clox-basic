@@ -6,3 +6,7 @@
  * nicer, lets say ? */
 var n = 12;
 var y = n * 2;
+
+print n;
+print y;
+print  y + n;
