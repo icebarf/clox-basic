@@ -246,16 +246,25 @@ evaluate_binary(Env_manager* env_mgr, Expr* expr, bool* had_runtime_error)
                                  .type = NUMBER };
             }
 
-            if (((left.type == NUMBER) && (right.type == STRING)) ||
-                ((left.type == STRING) && (right.type == NUMBER)) ||
-                ((left.type == STRING) && (right.type == STRING))) {
-
+            if (((left.type == NUMBER) &&
+                 ((right.type == STRING) || (right.type == STRING_2))) ||
+                (((left.type == STRING) || (left.type == STRING_2)) &&
+                 (right.type == NUMBER)) ||
+                (((left.type == STRING) || (left.type == STRING_2)) &&
+                 ((right.type == STRING) || (right.type == STRING_2)))) {
                 char* bigstr =
                   calloc(left.string_len + right.string_len + 1, sizeof(char));
 
                 memccpy(bigstr, left.string, '\0', left.string_len);
                 strncat(bigstr, right.string, right.string_len);
-                return (Object){ .string = bigstr, .type = STRING_2 };
+
+                if (left.type == STRING_2) free(left.string);
+                else if (right.type == STRING_2)
+                    free(right.string);
+                return (Object){ .string = bigstr,
+                                 .string_len =
+                                   left.string_len + right.string_len + 1,
+                                 .type = STRING_2 };
             }
 
             runtime_error(expr->binary->Operator,
