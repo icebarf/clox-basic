@@ -609,8 +609,8 @@ print_statement(Parser* parser, Env_manager* env_mgr)
 
     return (Statement){ .type = PRINT_STMT,
                         .accept = &eval_print_stmt,
-                        .prtStmt = (Print_statement){ .expression = value,
-                                                      .semicolon = semicolon },
+                        .prtStmt =
+                          (Print_statement){ .expression = value, .tok = semicolon },
                         .env_idx = env_mgr->env_idx };
 }
 
@@ -627,8 +627,8 @@ expression_statement(Parser* parser, Env_manager* env_mgr)
 
     return (Statement){ .type = EXPR_STMT,
                         .accept = &eval_expr_stmt,
-                        .exStmt = (Expr_statement){ .expression = value,
-                                                    .semicolon = semicolon },
+                        .exStmt =
+                          (Expr_statement){ .expression = value, .tok = semicolon },
                         .env_idx = env_mgr->env_idx };
 }
 
@@ -650,7 +650,7 @@ var_declaration(Parser* parser, Env_manager* env_mgr)
     }
 
     return (Statement){ .type = VAR_DECL_STMT,
-                        .vardecl = (Var_decl){ .name = name, .initialiser = init },
+                        .vardecl = (Var_decl){ .tok = name, .expression = init },
                         .accept = &eval_var_stmt,
                         .env_idx = env_mgr->env_idx };
 }
@@ -663,19 +663,27 @@ block(Parser* parser, Env_manager* env_mgr)
 {
     Statement* statements = allocate_statements(STMT_CNT * sizeof(Statement));
     size_t idx = 0;
-    size_t cnt = 0;
-    size_t have_stmts = 0;
+    size_t have_stmts = STMT_CNT;
 
+    env_mgr->env_idx++;
+    env_mgr->total_envs++;
     env_mgr->envs =
-      realloc(env_mgr->envs, (sizeof(Environment*) * 1) + env_mgr->env_idx);
+      realloc(env_mgr->envs, sizeof(Environment*) * (env_mgr->env_idx + 1));
+    if (env_mgr->envs == NULL) {
+        error(0,
+              0,
+              "While creating Block Environment, reallocated environment pointer is "
+              "NULL");
+        exit(EX_OSERR);
+    }
 
     sh_new_arena(env_mgr->envs[env_mgr->env_idx]);
-    env_mgr->env_idx++;
 
     while (!check_token(parser, RIGHT_BRACE) && !parser_is_at_end(parser)) {
-        if (cnt == have_stmts) {
+        if (idx == have_stmts) {
             statements = realloc(statements, have_stmts * 2 * sizeof(Statement));
             if (statements == NULL) {
+                shfree(env_mgr->envs[env_mgr->env_idx]);
                 REPORT_PARSER_ERROR_INTERNAL((Token){ .type = INVALID_TOKEN_INT },
                                              "Out of memory");
                 exit(EX_OSERR);
@@ -683,13 +691,32 @@ block(Parser* parser, Env_manager* env_mgr)
             have_stmts *= 2;
         }
         statements[idx] = declaration(parser, env_mgr);
-        statements[idx].env_idx = env_mgr->env_idx;
-        cnt++;
+        statements[idx++].env_idx = env_mgr->env_idx;
     }
 
-    statements[0].count = idx - 1;
+    statements[0].count = idx;
 
-    consume(parser, RIGHT_BRACE, "Expected a '}' after block.");
+    if (consume(parser, RIGHT_BRACE, "Expected a '}' after block.").type ==
+        INVALID_TOKEN_INT) {
+        shfree(env_mgr->envs[env_mgr->env_idx]);
+        env_mgr->env_idx--;
+
+        env_mgr->envs =
+          realloc(env_mgr->envs, sizeof(Environment*) * (env_mgr->env_idx + 1));
+        if (env_mgr->envs == NULL) {
+            error(0,
+                  0,
+                  "While shrinking Block Environment, reallocated environment "
+                  "pointer is NULL");
+            exit(EX_OSERR);
+        }
+
+        for (size_t i = 0; i < statements[0].count; i++) {
+            if (statements[i].type != BLOCK_STMT)
+                deallocate_expr(statements[i].exStmt.expression);
+        }
+        free(statements);
+    }
 
     return (Statement){ .block = (Block){ .statements = statements },
                         .type = BLOCK_STMT,

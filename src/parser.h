@@ -32,6 +32,7 @@ typedef struct Env_t Environment;
 typedef struct {
     Environment** envs;
     size_t env_idx;
+    size_t total_envs;
 } Env_manager;
 
 typedef struct Object_t {
@@ -98,16 +99,17 @@ struct Expr_t {
 };
 
 typedef struct {
-    Token semicolon;
+    Token tok;
     Expr* expression;
 } Expr_statement;
 
 typedef Expr_statement Print_statement;
+typedef Expr_statement Var_decl;
 
-typedef struct {
-    Token name;
-    Expr* initialiser;
-} Var_decl;
+// typedef struct {
+//     Token name;
+//     Expr* initialiser;
+// } Var_decl;
 
 typedef struct Statement_t Statement;
 
