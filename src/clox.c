@@ -59,6 +59,7 @@ run(const char* buffer, size_t buf_len, Program* program)
       realloc(program->toks_list, sizeof(Token*) * (program->toks_list_cnt + 1));
     program->tok_cnt =
       realloc(program->tok_cnt, sizeof(size_t) * (program->toks_list_cnt + 1));
+
     program->toks_list[program->toks_list_cnt] = program->scanner->tokens;
     program->tok_cnt[program->toks_list_cnt++] = program->scanner->tokens_count;
 
@@ -67,7 +68,8 @@ run(const char* buffer, size_t buf_len, Program* program)
     interpret(program);
 
     for (size_t i = 0; i < program->parser->statements[0].count; i++) {
-        deallocate_expr(program->parser->statements[i].exStmt.expression);
+        if (program->parser->statements[i].type != BLOCK_STMT)
+            deallocate_expr(program->parser->statements[i].exStmt.expression);
     }
     free(program->statements);
 expr_end:
@@ -114,6 +116,7 @@ main(int argc, char** argv)
     Program program = { .env_mgr = &env_mgr, .parser = parser, .scanner = scanner };
 
     sh_new_arena(program.env_mgr->envs[0]);
+    env_mgr.total_envs++;
 
     if (argc > 2) {
         fprintf(stderr, "Usage: clox [script]\n");
@@ -124,7 +127,7 @@ main(int argc, char** argv)
 
     run_prompt(&program);
 
-    for_range(i, program.env_mgr->env_idx) shfree(program.env_mgr->envs[i]);
+    shfree(env_mgr.envs[0]);
 
     for_range(i, program.toks_list_cnt)
       deallocate_tokens(program.toks_list[i], program.tok_cnt[i]);

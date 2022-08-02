@@ -451,28 +451,27 @@ void
 eval_var_stmt(Env_manager* env_mgr, Statement statement, bool* had_runtime_error)
 {
     Object obj = { .type = NIL };
-    if (statement.vardecl.initialiser != NULL)
-        obj = evaluate(env_mgr, statement.vardecl.initialiser, had_runtime_error);
+    if (statement.vardecl.expression != NULL)
+        obj = evaluate(env_mgr, statement.vardecl.expression, had_runtime_error);
 
-    define(env_mgr, statement.vardecl.name.lexeme, obj, env_mgr->env_idx);
+    define(env_mgr, statement.vardecl.tok.lexeme, obj, env_mgr->env_idx);
 }
 
 void
 eval_block(Env_manager* env_mgr, Statement statement, bool* had_runtime_error)
 {
     Statement* block = statement.block.statements;
+    size_t cnt = block[0].count;
 
-    for (size_t i = 0; i < block[0].count; i++) {
+    for (size_t i = 0; i < cnt; i++) {
         block[i].accept(env_mgr, block[i], had_runtime_error);
     }
 
-    size_t cnt = block[0].count;
-    for (size_t i = 0; i < cnt; i++) {
-        if (block[i].type == EXPR_STMT || PRINT_STMT)
-            deallocate_expr(block[i].exStmt.expression);
-        if (block[i].type == VAR_DECL_STMT)
-            deallocate_expr(block[i].vardecl.initialiser);
-    }
+    shfree(env_mgr->envs[env_mgr->env_idx]);
+    env_mgr->env_idx--;
+    for (size_t i = 0; i < cnt; i++)
+        deallocate_expr(block[i].exStmt.expression);
+    free(block);
 }
 
 void
