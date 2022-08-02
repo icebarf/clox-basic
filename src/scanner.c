@@ -39,13 +39,12 @@ init_scanner(const char* source, const size_t source_length)
 {
     Scanner scanner = { .source = source,
                         .token_max = TOKEN_CNT,
+                        .tokens = allocate_tokens(TOKEN_CNT),
                         .tokens_count = 0,
                         .source_length = source_length,
                         .start = 0,
                         .current = 0,
                         .line = 1 };
-
-    scanner.tokens = allocate_tokens(TOKEN_CNT); // allocate TOKEN_CNT space
 
     return scanner;
 }
