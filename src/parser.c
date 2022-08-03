@@ -579,6 +579,7 @@ assignment_rule(Parser* parser)
         }
 
         REPORT_PARSER_ERROR_INTERNAL(equals, "Invalid lvalue for assignment.");
+        deallocate_expr(rvalue);
     }
 
     return expr;
