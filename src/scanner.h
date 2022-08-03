@@ -1,3 +1,4 @@
+#pragma once
 // clox-basic - C Language Implementation of jlox from Crafting Interpreters.
 //
 // Copyright (C) 2022 Amritpal Singh
