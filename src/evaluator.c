@@ -242,7 +242,11 @@ evaluate_binary(Env_manager* env_mgr, Expr* expr, bool* had_runtime_error)
 
         case PLUS:
             if ((left.type == NUMBER) && (right.type == NUMBER)) {
+                char* str = calloc(DOUBLE_MAX_DIG + 1, sizeof(char));
+                snprintf(str, DOUBLE_MAX_DIG, "%lf", left.number + right.number);
                 return (Object){ .number = left.number + right.number,
+                                 .string = str,
+                                 .string_len = strlen(str),
                                  .type = NUMBER };
             }
 
@@ -254,12 +258,16 @@ evaluate_binary(Env_manager* env_mgr, Expr* expr, bool* had_runtime_error)
                  ((right.type == STRING) || (right.type == STRING_2)))) {
                 char* bigstr =
                   calloc(left.string_len + right.string_len + 1, sizeof(char));
-
+                if (bigstr == NULL) {
+                    error(expr->binary->left->literal->value.line,
+                          expr->binary->left->literal->value.col,
+                          "Memory not allocated");
+                }
                 memccpy(bigstr, left.string, '\0', left.string_len);
                 strncat(bigstr, right.string, right.string_len);
 
-                if (left.type == STRING_2) free(left.string);
-                else if (right.type == STRING_2)
+                if (left.type == STRING_2 || left.type == NUMBER) free(left.string);
+                if (right.type == STRING_2 || right.type == NUMBER)
                     free(right.string);
                 return (Object){ .string = bigstr,
                                  .string_len =
@@ -447,9 +455,6 @@ eval_print_stmt(Env_manager* env_mgr, Statement statement, bool* had_runtime_err
     char* str = NULL;
     Object obj = evaluate(env_mgr, statement.prtStmt.expression, had_runtime_error);
     if (obj.type == INVALID_TOKEN_INT) return;
-
-    if (obj.type == IDENTIFIER)
-        obj = evaluate_identifier(env_mgr, statement.prtStmt.expression);
 
     str = stringify(obj);
     puts(str);
