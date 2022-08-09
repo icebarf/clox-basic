@@ -106,23 +106,24 @@ typedef struct {
 
 typedef Expr_statement Print_statement;
 typedef Expr_statement Var_decl;
-
-// typedef struct {
-//     Token name;
-//     Expr* initialiser;
-// } Var_decl;
-
 typedef struct Statement_t Statement;
 
 typedef struct {
     Statement* statements;
 } Block;
 
+typedef struct {
+    Expr* condition;
+    Statement* branches;
+    enum { THEN_BRNCH, ELSE_BRNCH };
+} If_stmt;
+
 struct Statement_t {
     union {
         Expr_statement exStmt;
         Print_statement prtStmt;
         Var_decl vardecl;
+        If_stmt ifStmt;
         Block block;
     };
     void (*accept)(Env_manager* env_mgr, Statement, bool*);
@@ -132,6 +133,7 @@ struct Statement_t {
         EXPR_STMT,
         PRINT_STMT,
         VAR_DECL_STMT,
+        IF_STMT,
         BLOCK_STMT,
         BAD_STMT
     } type;

@@ -37,6 +37,9 @@ void
 eval_var_stmt(Env_manager* env_mgr, Statement statement, bool* had_runtime_error);
 
 void
+eval_if_stmt(Env_manager* env_mgr, Statement statement, bool* had_runtime_error);
+
+void
 eval_block(Env_manager* env_mgr, Statement statement, bool* had_runtime_error);
 
 void

@@ -82,6 +82,12 @@ init_variable_expr(Token name,
     return (struct Variable_e){ .name = name, .value = rvalue, .accept = visitor };
 }
 
+If_stmt
+init_ifStmt(Expr* cond)
+{
+    return (If_stmt){ .branches = malloc(sizeof(Statement) * 2), .condition = cond };
+}
+
 Expr
 init_expression(enum EXPR_TYPES type,
                 void* holder,
@@ -658,6 +664,8 @@ var_declaration(Parser* parser, Env_manager* env_mgr)
 
 static Statement
 declaration(Parser* parser, Env_manager* env_mgr);
+static Statement
+statement(Parser* parser, Env_manager* env_mgr);
 
 static Statement
 block(Parser* parser, Env_manager* env_mgr)
@@ -726,8 +734,39 @@ block(Parser* parser, Env_manager* env_mgr)
 }
 
 static Statement
+if_statement(Parser* parser, Env_manager* env_mgr)
+{
+    Token lparen = consume(parser, LEFT_PAREN, "Expected a '(' after 'if'.");
+    if (lparen.type == INVALID_EXPR_INT) parser->had_error = true;
+    Expr* condition = expression_rule(parser);
+    if (condition->type == INVALID_EXPR_INT) parser->had_error = true;
+    Token rparen =
+      consume(parser, RIGHT_PAREN, "Expected a ')' after if condition.");
+    if (rparen.type == INVALID_TOKEN_INT) {
+        deallocate_expr(condition);
+        parser->had_error = true;
+    }
+
+    Statement then_branch = statement(parser, env_mgr);
+    Statement else_branch = { .type = BAD_STMT };
+    if (match_token(parser, 1, ELSE)) else_branch = statement(parser, env_mgr);
+
+    If_stmt ifStmt = init_ifStmt(condition);
+    ifStmt.branches[THEN_BRNCH] = then_branch;
+    ifStmt.branches[ELSE_BRNCH] = else_branch;
+
+    return (Statement){
+        .ifStmt = ifStmt,
+        .type = IF_STMT,
+        .accept = eval_if_stmt,
+        .env_idx = env_mgr->env_idx,
+    };
+}
+
+static Statement
 statement(Parser* parser, Env_manager* env_mgr)
 {
+    if (match_token(parser, 1, IF)) return if_statement(parser, env_mgr);
     if (match_token(parser, 1, PRINT)) return print_statement(parser, env_mgr);
     if (match_token(parser, 1, LEFT_BRACE)) return block(parser, env_mgr);
 

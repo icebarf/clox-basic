@@ -472,6 +472,17 @@ eval_var_stmt(Env_manager* env_mgr, Statement statement, bool* had_runtime_error
 }
 
 void
+eval_if_stmt(Env_manager* env_mgr, Statement statement, bool* had_runtime_error)
+{
+    if (is_truthy(evaluate(env_mgr, statement.ifStmt.condition, had_runtime_error)))
+        statement.ifStmt.branches[THEN_BRNCH].accept(
+          env_mgr, statement, had_runtime_error);
+    else if (statement.ifStmt.branches[ELSE_BRNCH].type != BAD_STMT)
+        statement.ifStmt.branches[ELSE_BRNCH].accept(
+          env_mgr, statement, had_runtime_error);
+}
+
+void
 eval_block(Env_manager* env_mgr, Statement statement, bool* had_runtime_error)
 {
     Statement* block = statement.block.statements;
