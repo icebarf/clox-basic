@@ -11,7 +11,7 @@ Here are the functionalities built
 - [x] Parser
 - [x] Evaluation
 - [x] Statements
-- [ ] Control Flow
+- [x] Control Flow
 - [ ] Functions
 - [ ] Name resolving and binding
 - [ ] Classes
