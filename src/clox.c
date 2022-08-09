@@ -35,10 +35,6 @@
 #include "token.h"
 #include "utility.h"
 
-/* do not execute code that has an error */
-bool had_error = false;
-bool had_runtime_error = false;
-
 /* run the interpreter
  * Params:
  * @buffer : a null terminated buffer containing lox source code
@@ -63,7 +59,7 @@ run(const char* buffer, size_t buf_len, Program* program)
     program->toks_list[program->toks_list_cnt] = program->scanner->tokens;
     program->tok_cnt[program->toks_list_cnt++] = program->scanner->tokens_count;
 
-    if (had_error) goto expr_end;
+    if (program->parser->had_error) goto expr_end;
 
     interpret(program);
 
@@ -87,8 +83,8 @@ runfile(const char* filename, Program* program)
     const char* filebuffer = readfile(filename, &filesize);
     run(filebuffer, filesize, program);
 
-    if (had_error) exit(EX_DATAERR);
-    if (had_runtime_error) exit(EX_SOFTWARE);
+    if (program->parser->had_error) exit(EX_DATAERR);
+    if (program->had_runtime_error) exit(EX_SOFTWARE);
 }
 
 /* run the interpreter as a RPEL*/
@@ -101,7 +97,7 @@ run_prompt(Program* program)
 
         add_history(line);
         run(line, strlen(line), program);
-        had_error = false;
+        program->parser->had_error = false;
     }
 }
 
@@ -110,8 +106,8 @@ main(int argc, char** argv)
 {
     Environment** env = calloc(1, sizeof(Environment*));
     Env_manager env_mgr = { .envs = env, .env_idx = 0 };
-    Scanner* scanner = malloc(sizeof(Scanner));
-    Parser* parser = malloc(sizeof(Parser));
+    Scanner* scanner = calloc(1, sizeof(Scanner));
+    Parser* parser = calloc(1, sizeof(Parser));
 
     Program program = { .env_mgr = &env_mgr, .parser = parser, .scanner = scanner };
 
