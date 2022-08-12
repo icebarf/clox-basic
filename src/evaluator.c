@@ -17,6 +17,7 @@
 // You should have received a copy of the GNU General Public License along with
 // clox-basic. If not, see <https://www.gnu.org/licenses/>.
 
+#include <assert.h>
 #include <math.h>
 #include <stdbool.h>
 #include <stddef.h>
@@ -489,6 +490,7 @@ eval_block(Env_manager* env_mgr, Statement statement, bool* had_runtime_error)
     size_t cnt = block[0].count;
 
     for (size_t i = 0; i < cnt; i++) {
+        assert(block[i].accept != NULL);
         block[i].accept(env_mgr, block[i], had_runtime_error);
     }
 

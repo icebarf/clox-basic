@@ -737,7 +737,7 @@ static Statement
 if_statement(Parser* parser, Env_manager* env_mgr)
 {
     Token lparen = consume(parser, LEFT_PAREN, "Expected a '(' after 'if'.");
-    if (lparen.type == INVALID_EXPR_INT) parser->had_error = true;
+    if (lparen.type == INVALID_TOKEN_INT) parser->had_error = true;
     Expr* condition = expression_rule(parser);
     if (condition->type == INVALID_EXPR_INT) parser->had_error = true;
     Token rparen =
@@ -805,6 +805,18 @@ parse(Program* program)
 
         if (program->parser->had_error) {
             syncronize_parser(program->parser);
+            for (size_t i = 0; i < program->parser->current_statement_idx; i++) {
+                if (program->parser->statements[i].type == IF_STMT) {
+                    deallocate_expr(program->parser->statements[i].ifStmt.condition);
+                    free(program->parser->statements[i].ifStmt.branches);
+                    continue;
+                }
+                if (program->parser->statements[i].type == BLOCK_STMT) {
+                    free(program->parser->statements[i].block.statements);
+                    continue;
+                }
+                deallocate_expr(program->parser->statements[i].exStmt.expression);
+            }
             free(program->parser->statements);
             return NULL;
         }

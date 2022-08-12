@@ -29,7 +29,6 @@
 #include "utility.h"
 
 /* some external globals for use */
-extern bool had_error;
 extern const char* TokenTypeString[40];
 
 /* read a file into a buffer and return it.
@@ -158,7 +157,6 @@ void
 error(size_t line, size_t col, const char* message)
 {
     report(line, col, "", message);
-    had_error = true;
 }
 
 /* non-lexicographic string compare

@@ -112,10 +112,10 @@ typedef struct {
     Statement* statements;
 } Block;
 
+enum { THEN_BRNCH, ELSE_BRNCH };
 typedef struct {
     Expr* condition;
     Statement* branches;
-    enum { THEN_BRNCH, ELSE_BRNCH };
 } If_stmt;
 
 struct Statement_t {

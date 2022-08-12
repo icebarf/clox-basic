@@ -64,11 +64,19 @@ run(const char* buffer, size_t buf_len, Program* program)
     interpret(program);
 
     for (size_t i = 0; i < program->parser->statements[0].count; i++) {
-        if (program->parser->statements[i].type != BLOCK_STMT)
-            deallocate_expr(program->parser->statements[i].exStmt.expression);
+        if (program->parser->statements[i].type == IF_STMT) {
+            deallocate_expr(program->parser->statements[i].ifStmt.condition);
+            free(program->parser->statements[i].ifStmt.branches);
+            continue;
+        }
+        if (program->parser->statements[i].type == BLOCK_STMT) {
+            free(program->parser->statements[i].block.statements);
+            continue;
+        }
+        deallocate_expr(program->parser->statements[i].exStmt.expression);
     }
-    free(program->statements);
 expr_end:
+    free(program->statements);
     free((void*)buffer);
 }
 
