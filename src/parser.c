@@ -297,7 +297,7 @@ match_token(Parser* parser, size_t token_type_cnt, ...)
 }
 
 void
-syncronize_parser(Parser* parser)
+synchronize_parser(Parser* parser)
 {
     advance_parser(parser);
     while (!parser_is_at_end(parser)) {
@@ -330,9 +330,14 @@ consume(Parser* parser, enum TOKEN_TYPE type, const char* message)
     if (check_token(parser, type)) return advance_parser(parser);
 
     /* if we don't match the expected token just report parser error */
-    parser_error(peek_token(parser), message);
+    Token ret = peek_token(parser);
+    parser_error(ret, message);
     advance_parser(parser);
-    return (Token){ .type = INVALID_TOKEN_INT };
+    return (Token){ .type = INVALID_TOKEN_INT,
+                    .line = ret.line,
+                    .col = ret.col,
+                    .lexeme = ret.lexeme,
+                    .lexeme_len = ret.lexeme_len };
 }
 
 Expr*
@@ -608,9 +613,12 @@ print_statement(Parser* parser, Env_manager* env_mgr)
 {
     Expr* value = expression_rule(parser);
     Token semicolon = consume(parser, SEMICOLON, "Expected a ';' after expression.");
-    if (value->type == INVALID_EXPR_INT) parser->had_error = true;
+    if (value->type == INVALID_EXPR_INT) {
+        synchronize_parser(parser);
+        parser_error(semicolon, "Invalid expression to print");
+        parser->had_error = true;
+    }
     if (semicolon.type == INVALID_TOKEN_INT) {
-        deallocate_expr(value);
         parser->had_error = true;
     }
 
@@ -626,9 +634,12 @@ expression_statement(Parser* parser, Env_manager* env_mgr)
 {
     Expr* value = expression_rule(parser);
     Token semicolon = consume(parser, SEMICOLON, "Expected a ';' after expression.");
-    if (value->type == INVALID_EXPR_INT) parser->had_error = true;
+    if (value->type == INVALID_EXPR_INT) {
+        synchronize_parser(parser);
+        parser->had_error = true;
+    }
+
     if (semicolon.type == INVALID_TOKEN_INT) {
-        deallocate_expr(value);
         parser->had_error = true;
     }
 
@@ -647,12 +658,14 @@ var_declaration(Parser* parser, Env_manager* env_mgr)
 
     if (match_token(parser, 1, EQUAL)) {
         init = expression_rule(parser);
-        if (init->type == INVALID_EXPR_INT) parser->had_error = true;
+        if (init->type == INVALID_EXPR_INT) {
+            synchronize_parser(parser);
+            parser->had_error = true;
+        }
     }
 
     Token semicolon = consume(parser, SEMICOLON, "Expected a ';' after expression.");
     if (semicolon.type == INVALID_TOKEN_INT) {
-        deallocate_expr(init);
         parser->had_error = true;
     }
 
@@ -739,11 +752,13 @@ if_statement(Parser* parser, Env_manager* env_mgr)
     Token lparen = consume(parser, LEFT_PAREN, "Expected a '(' after 'if'.");
     if (lparen.type == INVALID_TOKEN_INT) parser->had_error = true;
     Expr* condition = expression_rule(parser);
-    if (condition->type == INVALID_EXPR_INT) parser->had_error = true;
+    if (condition->type == INVALID_EXPR_INT) {
+        synchronize_parser(parser);
+        parser->had_error = true;
+    }
     Token rparen =
       consume(parser, RIGHT_PAREN, "Expected a ')' after if condition.");
     if (rparen.type == INVALID_TOKEN_INT) {
-        deallocate_expr(condition);
         parser->had_error = true;
     }
 
@@ -804,7 +819,7 @@ parse(Program* program)
           declaration(program->parser, program->env_mgr);
 
         if (program->parser->had_error) {
-            syncronize_parser(program->parser);
+            synchronize_parser(program->parser);
             for (size_t i = 0; i < program->parser->current_statement_idx; i++) {
                 if (program->parser->statements[i].type == IF_STMT) {
                     deallocate_expr(program->parser->statements[i].ifStmt.condition);

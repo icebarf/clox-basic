@@ -75,20 +75,11 @@ get_object_from_literal(Env_manager* env_mgr, Expr* expr)
 }
 
 static bool
-is_bool(Object object)
-{
-    return object.type == TRUE || object.type == FALSE;
-}
-
-static bool
 is_truthy(Object object)
 {
     if (object.type == INVALID_TOKEN_INT) return false;
     if (object.type == NIL) return false;
-
-    if (is_bool(object)) {
-        return is_bool(object);
-    }
+    if (object.type == FALSE) return false;
 
     return true;
 }
@@ -125,7 +116,7 @@ True(Object a)
 static bool
 False(Object a)
 {
-    return a.type == FALSE;
+    return !True(a);
 }
 
 static bool
@@ -472,15 +463,58 @@ eval_var_stmt(Env_manager* env_mgr, Statement statement, bool* had_runtime_error
     define(env_mgr, statement.vardecl.tok.lexeme, obj, env_mgr->env_idx);
 }
 
+static void
+free_block(Statement block)
+{
+    assert(block.type == BLOCK_STMT);
+    size_t cnt = block.block.statements[0].count;
+    for (size_t i = 0; i < cnt; i++) {
+        if (block.block.statements[i].type == IF_STMT) continue;
+        if (block.block.statements[i].type == BLOCK_STMT) continue;
+        deallocate_expr(block.block.statements[i].exStmt.expression);
+    }
+    free(block.block.statements);
+}
+
 void
 eval_if_stmt(Env_manager* env_mgr, Statement statement, bool* had_runtime_error)
 {
-    if (is_truthy(evaluate(env_mgr, statement.ifStmt.condition, had_runtime_error)))
+    if (is_truthy(
+          evaluate(env_mgr, statement.ifStmt.condition, had_runtime_error))) {
         statement.ifStmt.branches[THEN_BRNCH].accept(
-          env_mgr, statement, had_runtime_error);
-    else if (statement.ifStmt.branches[ELSE_BRNCH].type != BAD_STMT)
+          env_mgr, statement.ifStmt.branches[THEN_BRNCH], had_runtime_error);
+    } else if (statement.ifStmt.branches[ELSE_BRNCH].type != BAD_STMT) {
         statement.ifStmt.branches[ELSE_BRNCH].accept(
-          env_mgr, statement, had_runtime_error);
+          env_mgr, statement.ifStmt.branches[ELSE_BRNCH], had_runtime_error);
+    }
+
+    deallocate_expr(statement.ifStmt.condition);
+
+    switch (statement.ifStmt.ran) {
+        case THEN_BRNCH:
+            if (statement.ifStmt.branches[ELSE_BRNCH].type == BLOCK_STMT) {
+                shfree(env_mgr->envs[env_mgr->env_idx]);
+                env_mgr->env_idx--;
+                free_block(statement.ifStmt.branches[ELSE_BRNCH]);
+            }
+            break;
+        case ELSE_BRNCH:
+            if (statement.ifStmt.branches[THEN_BRNCH].type == BLOCK_STMT) {
+                shfree(env_mgr->envs[env_mgr->env_idx]);
+                env_mgr->env_idx--;
+                free_block(statement.ifStmt.branches[THEN_BRNCH]);
+            }
+            break;
+    }
+    if (statement.ifStmt.branches[THEN_BRNCH].type != BLOCK_STMT &&
+        statement.ifStmt.branches[THEN_BRNCH].type != IF_STMT)
+        deallocate_expr(statement.ifStmt.branches[THEN_BRNCH].exStmt.expression);
+    if (statement.ifStmt.branches[ELSE_BRNCH].type != BAD_STMT &&
+        statement.ifStmt.branches[ELSE_BRNCH].type != BLOCK_STMT &&
+        statement.ifStmt.branches[ELSE_BRNCH].type != IF_STMT)
+        deallocate_expr(statement.ifStmt.branches[ELSE_BRNCH].exStmt.expression);
+
+    free(statement.ifStmt.branches);
 }
 
 void
@@ -490,15 +524,12 @@ eval_block(Env_manager* env_mgr, Statement statement, bool* had_runtime_error)
     size_t cnt = block[0].count;
 
     for (size_t i = 0; i < cnt; i++) {
-        assert(block[i].accept != NULL);
         block[i].accept(env_mgr, block[i], had_runtime_error);
     }
 
     shfree(env_mgr->envs[env_mgr->env_idx]);
     env_mgr->env_idx--;
-    for (size_t i = 0; i < cnt; i++)
-        deallocate_expr(block[i].exStmt.expression);
-    free(block);
+    free_block(statement);
 }
 
 void
