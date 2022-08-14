@@ -230,7 +230,12 @@ evaluate_binary(Env_manager* env_mgr, Expr* expr, bool* had_runtime_error)
                               had_runtime_error);
                 return (Object){ .type = INVALID_TOKEN_INT };
             }
-            return (Object){ .number = left.number - right.number, .type = NUMBER };
+            char* str = calloc(DOUBLE_MAX_DIG + 1, sizeof(char));
+            snprintf(str, DOUBLE_MAX_DIG, "%lf", left.number - right.number);
+            return (Object){ .number = left.number - right.number,
+                             .string = str,
+                             .string_len = strlen(str),
+                             .type = NUMBER };
 
         case PLUS:
             if ((left.type == NUMBER) && (right.type == NUMBER)) {
@@ -414,9 +419,12 @@ stringify(Object object)
     if (object.type == NIL) return "nil";
 
     if (object.type == NUMBER) {
-        char* str = calloc(DOUBLE_MAX_DIG + 1, sizeof(char));
-        snprintf(str, DOUBLE_MAX_DIG, "%lf", object.number);
-        return str;
+        if (object.string == NULL) {
+            char* str = calloc(DOUBLE_MAX_DIG + 1, sizeof(char));
+            snprintf(str, DOUBLE_MAX_DIG, "%lf", object.number);
+            return str;
+        } else
+            return object.string;
     }
 
     if (object.type == STRING || object.type == STRING_2) {
@@ -450,7 +458,6 @@ eval_print_stmt(Env_manager* env_mgr, Statement statement, bool* had_runtime_err
 
     str = stringify(obj);
     puts(str);
-    if (obj.type == NUMBER || (obj.type == STRING_2)) free(str);
 }
 
 void
