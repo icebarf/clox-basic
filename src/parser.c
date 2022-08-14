@@ -614,6 +614,7 @@ print_statement(Parser* parser, Env_manager* env_mgr)
     Expr* value = expression_rule(parser);
     Token semicolon = consume(parser, SEMICOLON, "Expected a ';' after expression.");
     if (value->type == INVALID_EXPR_INT) {
+        deallocate_expr(value);
         synchronize_parser(parser);
         parser_error(semicolon, "Invalid expression to print");
         parser->had_error = true;
