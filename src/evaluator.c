@@ -165,7 +165,7 @@ check_number_operands(enum TOKEN_TYPE chktype, size_t objcnt, ...)
 
     for (size_t i = 0; i < objcnt; i++) {
         obj = va_arg(obj_list, Object);
-        if (obj.type != chktype) return false;
+        if (obj.type != chktype && obj.type != NUMBER_2) return false;
     }
     return true;
 }
@@ -235,22 +235,23 @@ evaluate_binary(Env_manager* env_mgr, Expr* expr, bool* had_runtime_error)
             return (Object){ .number = left.number - right.number,
                              .string = str,
                              .string_len = strlen(str),
-                             .type = NUMBER };
+                             .type = NUMBER_2 };
 
         case PLUS:
-            if ((left.type == NUMBER) && (right.type == NUMBER)) {
+            if ((left.type == NUMBER || left.type == NUMBER_2) &&
+                (right.type == NUMBER || right.type == NUMBER_2)) {
                 char* str = calloc(DOUBLE_MAX_DIG + 1, sizeof(char));
                 snprintf(str, DOUBLE_MAX_DIG, "%lf", left.number + right.number);
                 return (Object){ .number = left.number + right.number,
                                  .string = str,
                                  .string_len = strlen(str),
-                                 .type = NUMBER };
+                                 .type = NUMBER_2 };
             }
 
-            if (((left.type == NUMBER) &&
+            if (((left.type == NUMBER || left.type == NUMBER_2) &&
                  ((right.type == STRING) || (right.type == STRING_2))) ||
                 (((left.type == STRING) || (left.type == STRING_2)) &&
-                 (right.type == NUMBER)) ||
+                 (right.type == NUMBER || right.type == NUMBER_2)) ||
                 (((left.type == STRING) || (left.type == STRING_2)) &&
                  ((right.type == STRING) || (right.type == STRING_2)))) {
                 char* bigstr =
@@ -263,8 +264,11 @@ evaluate_binary(Env_manager* env_mgr, Expr* expr, bool* had_runtime_error)
                 memccpy(bigstr, left.string, '\0', left.string_len);
                 strncat(bigstr, right.string, right.string_len);
 
-                if (left.type == STRING_2 || left.type == NUMBER) free(left.string);
-                if (right.type == STRING_2 || right.type == NUMBER)
+                if (left.type == STRING_2 || left.type == NUMBER ||
+                    left.type == NUMBER_2)
+                    free(left.string);
+                if (right.type == STRING_2 || right.type == NUMBER ||
+                    right.type == NUMBER_2)
                     free(right.string);
                 return (Object){ .string = bigstr,
                                  .string_len =
@@ -277,48 +281,82 @@ evaluate_binary(Env_manager* env_mgr, Expr* expr, bool* had_runtime_error)
                           had_runtime_error);
             return (Object){ .type = INVALID_TOKEN_INT };
 
-        case SLASH:
+        case SLASH: {
             if (!check_number_operands(NUMBER, 2, left, right)) {
+                if (left.type == NUMBER_2) free(left.string);
+                if (right.type == NUMBER_2) free(right.string);
                 runtime_error(expr->binary->Operator,
                               "Runtime: Operands must be numbers",
                               had_runtime_error);
-                return (Object){ .type = INVALID_TOKEN_INT };
             }
             if (is_floating_almost_equal(right.number, 0.0f)) {
+                if (left.type == NUMBER_2) free(left.string);
+                if (right.type == NUMBER_2) free(right.string);
                 runtime_error(expr->binary->Operator,
                               "Runtime: Division by zero is not allowed.",
                               had_runtime_error);
                 return (Object){ .type = INVALID_TOKEN_INT };
             }
-            return (Object){ .number = left.number / right.number, .type = NUMBER };
+            if (left.type == NUMBER_2) free(left.string);
+            if (right.type == NUMBER_2) free(right.string);
+            char* str = calloc(DOUBLE_MAX_DIG + 1, sizeof(char));
+            snprintf(str, DOUBLE_MAX_DIG, "%lf", left.number / right.number);
+            return (Object){ .number = left.number / right.number,
+                             .string = str,
+                             .string_len = strlen(str),
+                             .type = NUMBER_2 };
+        }
 
-        case MOD:
+        case MOD: {
             if (!check_number_operands(NUMBER, 2, left, right)) {
+                if (left.type == NUMBER_2) free(left.string);
+                if (right.type == NUMBER_2) free(right.string);
                 runtime_error(expr->binary->Operator,
                               "Runtime: Operands must be numbers",
                               had_runtime_error);
                 return (Object){ .type = INVALID_TOKEN_INT };
             }
             if (is_floating_almost_equal(right.number, 0.0f)) {
+                if (left.type == NUMBER_2) free(left.string);
+                if (right.type == NUMBER_2) free(right.string);
                 runtime_error(expr->binary->Operator,
                               "Runtime: Division by zero is not allowed.",
                               had_runtime_error);
                 return (Object){ .type = INVALID_TOKEN_INT };
             }
+            if (left.type == NUMBER_2) free(left.string);
+            if (right.type == NUMBER_2) free(right.string);
+            char* str = calloc(DOUBLE_MAX_DIG + 1, sizeof(char));
+            snprintf(str, DOUBLE_MAX_DIG, "%lf", fmod(left.number, right.number));
             return (Object){ .number = fmod(left.number, right.number),
-                             .type = NUMBER };
+                             .string = str,
+                             .string_len = strlen(str),
+                             .type = NUMBER_2 };
+        }
 
-        case STAR:
+        case STAR: {
             if (!check_number_operands(NUMBER, 2, left, right)) {
+                if (left.type == NUMBER_2) free(left.string);
+                if (right.type == NUMBER_2) free(right.string);
                 runtime_error(expr->binary->Operator,
                               "Runtime: Operands must be numbers",
                               had_runtime_error);
                 return (Object){ .type = INVALID_TOKEN_INT };
             }
-            return (Object){ .number = left.number * right.number, .type = NUMBER };
+            if (left.type == NUMBER_2) free(left.string);
+            if (right.type == NUMBER_2) free(right.string);
+            char* str = calloc(DOUBLE_MAX_DIG + 1, sizeof(char));
+            snprintf(str, DOUBLE_MAX_DIG, "%lf", left.number * right.number);
+            return (Object){ .number = left.number * right.number,
+                             .string = str,
+                             .string_len = strlen(str),
+                             .type = NUMBER_2 };
+        }
 
         case GREATER: {
             if (!check_number_operands(NUMBER, 2, left, right)) {
+                if (left.type == NUMBER_2) free(left.string);
+                if (right.type == NUMBER_2) free(right.string);
                 runtime_error(expr->binary->Operator,
                               "Runtime: Operands must be numbers",
                               had_runtime_error);
@@ -329,6 +367,8 @@ evaluate_binary(Env_manager* env_mgr, Expr* expr, bool* had_runtime_error)
         }
         case GREATER_EQUAL: {
             if (!check_number_operands(NUMBER, 2, left, right)) {
+                if (left.type == NUMBER_2) free(left.string);
+                if (right.type == NUMBER_2) free(right.string);
                 runtime_error(expr->binary->Operator,
                               "Runtime: Operands must be numbers",
                               had_runtime_error);
@@ -339,6 +379,8 @@ evaluate_binary(Env_manager* env_mgr, Expr* expr, bool* had_runtime_error)
         }
         case LESS: {
             if (!check_number_operands(NUMBER, 2, left, right)) {
+                if (left.type == NUMBER_2) free(left.string);
+                if (right.type == NUMBER_2) free(right.string);
                 runtime_error(expr->binary->Operator,
                               "Runtime: Operands must be numbers",
                               had_runtime_error);
@@ -349,6 +391,8 @@ evaluate_binary(Env_manager* env_mgr, Expr* expr, bool* had_runtime_error)
         }
         case LESS_EQUAL: {
             if (!check_number_operands(NUMBER, 2, left, right)) {
+                if (left.type == NUMBER_2) free(left.string);
+                if (right.type == NUMBER_2) free(right.string);
                 runtime_error(expr->binary->Operator,
                               "Runtime: Operands must be numbers",
                               had_runtime_error);
@@ -416,31 +460,21 @@ evaluate(Env_manager* env_mgr, Expr* expr, bool* had_runtime_error)
 static char*
 stringify(Object object)
 {
-    if (object.type == NIL) return "nil";
-
-    if (object.type == NUMBER) {
-        if (object.string == NULL) {
-            char* str = calloc(DOUBLE_MAX_DIG + 1, sizeof(char));
-            snprintf(str, DOUBLE_MAX_DIG, "%lf", object.number);
-            return str;
-        } else
+    switch (object.type) {
+        case TRUE:
+            return "true";
+        case FALSE:
+            return "false";
+        case NIL:
+            return "nil";
+        case STRING:
+        case STRING_2:
+        case NUMBER:
+        case NUMBER_2:
             return object.string;
+        default:
+            __builtin_unreachable();
     }
-
-    if (object.type == STRING || object.type == STRING_2) {
-        return object.string;
-    }
-
-    if (object.type == TRUE) {
-        return "true";
-    }
-
-    if (object.type == FALSE) {
-        return "false";
-    }
-
-    __builtin_unreachable();
-    return NULL;
 }
 
 void

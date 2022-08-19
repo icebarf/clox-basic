@@ -74,6 +74,7 @@ enum TOKEN_TYPE {
 
     // Internal Token Types
     STRING_2,
+    NUMBER_2,
     INVALID_TOKEN_INT
 };
 
